@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     phone_no: DataTypes.STRING,
     password: DataTypes.STRING,
     otpCode: DataTypes.INTEGER,
-    otpExpiresAt: DataTypes.STRING
+    otpExpiresAt: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'Users',

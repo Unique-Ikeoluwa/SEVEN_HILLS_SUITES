@@ -28,7 +28,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       otpExpiresAt: {
-        type: Sequelize.STRING
+        type: Sequelize.DATE
       },
       createdAt: {
         allowNull: false,
