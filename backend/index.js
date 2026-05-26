@@ -19,7 +19,17 @@ app.use("/", (req, res) => {
         });
 })
 
+const db = require("./models");
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+
+db.sequelize.authenticate()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(
+        `Database connected successfully and Server running on PORT:${PORT}`
+      );
+    });
+  })
+  .catch((e) => {
+    console.log(`Database connection failed:`, e);
+  });
