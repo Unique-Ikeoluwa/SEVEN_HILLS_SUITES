@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      Users.hasMany(models.bookings, { foreignKey: 'user_id', as: 'bookings' });
+      Users.hasMany(models.Message, { foreignKey: 'sender_id', as: 'sentMessages' });
+      Users.hasMany(models.Message, { foreignKey: 'receiver_id', as: 'receivedMessages' });
+      Users.hasMany(models.Notification, { foreignKey: 'user_id', as: 'notifications' });
     }
   }
   Users.init({
@@ -22,7 +25,9 @@ module.exports = (sequelize, DataTypes) => {
     password: DataTypes.STRING,
     otpCode: DataTypes.INTEGER,
     otpExpiresAt: DataTypes.DATE,
-    is_active: DataTypes.BOOLEAN
+    is_active: DataTypes.BOOLEAN,
+    is_verified: DataTypes.BOOLEAN
+    
   }, {
     sequelize,
     modelName: 'Users',
