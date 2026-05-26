@@ -1,9 +1,11 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const http = require('http');
 dotenv.config();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const app = express();
+const server = http.createServer(app);
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -33,3 +35,5 @@ db.sequelize.authenticate()
   .catch((e) => {
     console.log(`Database connection failed:`, e);
   });
+
+  
