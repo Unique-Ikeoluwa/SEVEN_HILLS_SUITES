@@ -10,7 +10,8 @@ module.exports = {
         primaryKey: true
       },
       title: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false
       },
       description: {
         type: Sequelize.STRING
@@ -19,7 +20,13 @@ module.exports = {
         type: Sequelize.STRING
       },
       price: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      status: {
+        type: Sequelize.ENUM('available', 'booked'),
+        defaultValue: 'available',
+        allowNull: false
       },
       amenities: {
         type: Sequelize.STRING

@@ -1,6 +1,7 @@
 'use strict';
 const {
-  Model
+  Model,
+  BOOLEAN
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Users extends Model {
@@ -20,7 +21,8 @@ module.exports = (sequelize, DataTypes) => {
     phone_no: DataTypes.STRING,
     password: DataTypes.STRING,
     otpCode: DataTypes.INTEGER,
-    otpExpiresAt: DataTypes.DATE
+    otpExpiresAt: DataTypes.DATE,
+    is_active: DataTypes.BOOLEAN
   }, {
     sequelize,
     modelName: 'Users',
