@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      Apartment.hasMany(models.bookings, { foreignKey: 'apartment_id', as: 'bookings' });
     }
   }
   Apartment.init({
@@ -19,7 +19,10 @@ module.exports = (sequelize, DataTypes) => {
     location: DataTypes.STRING,
     price: DataTypes.STRING,
     status: DataTypes.ENUM('available', 'booked'),
-    amenities: DataTypes.STRING
+    amenities: DataTypes.STRING,
+    images: DataTypes.TEXT,
+    videos: DataTypes.TEXT,
+    apartment_type: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Apartment',
