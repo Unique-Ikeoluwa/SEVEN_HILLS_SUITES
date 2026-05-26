@@ -2,37 +2,33 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('users', {
+    await queryInterface.createTable('bookings', {
       id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.UUID,
         defaultValue: Sequelize.literal('gen_random_uuid()')
       },
-      fullName: {
+      user_id: {
+        type: Sequelize.UUID
+      },
+      apartment_id: {
+        type: Sequelize.UUID
+      },
+      check_in: {
         type: Sequelize.STRING
       },
-      email: {
+      check_out: {
         type: Sequelize.STRING
       },
-      role: {
+      total_price: {
         type: Sequelize.STRING
       },
-      phone_no: {
-        type: Sequelize.STRING
+      booking_status: {
+        type: Sequelize.ENUM('pending', 'confirmed', 'cancelled')
       },
-      password: {
-        type: Sequelize.STRING
-      },
-      otpCode: {
-        type: Sequelize.INTEGER
-      },
-      otpExpiresAt: {
-        type: Sequelize.DATE
-      },
-      is_active: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false
+      payment_status: {
+        type: Sequelize.ENUM('pending', 'paid', 'failed')
       },
       createdAt: {
         allowNull: false,
@@ -45,6 +41,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('users');
+    await queryInterface.dropTable('bookings');
   }
 };

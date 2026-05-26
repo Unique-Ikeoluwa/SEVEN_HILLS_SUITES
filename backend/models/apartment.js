@@ -18,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     description: DataTypes.STRING,
     location: DataTypes.STRING,
     price: DataTypes.STRING,
+    status: DataTypes.ENUM('available', 'booked'),
     amenities: DataTypes.STRING
   }, {
     sequelize,
