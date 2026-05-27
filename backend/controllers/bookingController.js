@@ -85,6 +85,21 @@ exports.createBooking = async (req, res) => {
       payment_status: "pending",
     });
 
+    // Send Booking Creation Notifications
+    const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
+    await sendNotification({
+      userId: userId,
+      message: `Your booking for "${apartment.title}" has been initialized successfully. Total amount: $${totalPrice}. Please proceed to complete your payment.`,
+      emailSubject: "Booking Initialized 🔑",
+      emailBodyText: `<h3>Booking Initialized Successfully</h3><p>We are pleased to inform you that your reservation for <b>${apartment.title}</b> is currently pending.</p><p><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Price:</b> $${totalPrice}</p><p>Please initialize the checkout process to secure your stay.</p>`
+    });
+
+    await notifyAdmins({
+      message: `New booking initialized for "${apartment.title}" by user ID ${userId}. Total: $${totalPrice}.`,
+      emailSubject: "New Pending Booking Alert 🔔",
+      emailBodyText: `<p>A new booking has been initialized on the system.</p><p><b>Apartment:</b> ${apartment.title}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Amount:</b> $${totalPrice}</p>`
+    });
+
     return res.status(201).json({
       success: true,
       message: "Booking initialized successfully! Please proceed to payment.",
@@ -270,6 +285,21 @@ exports.cancelBooking = async (req, res) => {
       apartment.status = "available";
       await apartment.save();
     }
+
+    // Send Booking Cancellation Notifications
+    const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
+    await sendNotification({
+      userId: booking.user_id,
+      message: `Your booking for booking ID ${booking.id} has been cancelled successfully.`,
+      emailSubject: "Booking Cancellation Confirmed ❌",
+      emailBodyText: `<h3>Booking Cancellation Confirmed</h3><p>This email confirms that your booking (ID: ${booking.id}) has been cancelled.</p><p>If you did not request this, please contact support immediately.</p>`
+    });
+
+    await notifyAdmins({
+      message: `Booking ID ${booking.id} has been cancelled.`,
+      emailSubject: "Booking Cancelled 🔔",
+      emailBodyText: `<p>Booking (ID: ${booking.id}) has been cancelled by the user or an administrator. The reserved suite status has been restored to available.</p>`
+    });
 
     return res.status(200).json({
       success: true,

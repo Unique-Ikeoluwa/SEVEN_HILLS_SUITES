@@ -1,10 +1,14 @@
 const nodemailer = require("nodemailer");
 
 async function sendOtpEmail(email, otpCode, fullName) {
-  // console.log(`\n==========================================`);
-  // console.log(`[EMAIL SIMULATOR] Sending OTP Code to: ${email}`);
-  // console.log(`[EMAIL SIMULATOR] Hello ${fullName || 'User'}, your OTP Code is: ${otpCode}`);
-  // console.log(`==========================================\n`);
+  const isTestEmail = email.endsWith("@sevenhills.com") || email.endsWith("@example.com") || email.endsWith("@test.com") || email.includes("test");
+  if (isTestEmail) {
+    console.log(`\n==========================================`);
+    console.log(`[EMAIL SIMULATOR] Bypassing SMTP for test email address: ${email}`);
+    console.log(`[EMAIL SIMULATOR] Hello ${fullName || 'User'}, your OTP Code is: ${otpCode}`);
+    console.log(`==========================================\n`);
+    return true;
+  }
 
   // Check if SMTP credentials are provided
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {

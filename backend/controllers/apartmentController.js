@@ -17,13 +17,46 @@ exports.createApartment = async (req, res) => {
       });
     }
 
-    const { title, description, location, price, amenities } = req.body;
+    const { title, description, location, price, amenities, apartment_type } = req.body;
 
     if (!title || !price) {
       return res.status(400).json({
         success: false,
         message: "Title and price are required.",
       });
+    }
+
+    const { uploadToCloudinary } = require("../config/cloudinaryConfig");
+    let imageUrls = [];
+    let videoUrls = [];
+
+    // Parse and stream files to Cloudinary
+    if (req.files) {
+      if (req.files.images) {
+        if (req.files.images.length > 6) {
+          return res.status(400).json({
+            success: false,
+            message: "You can upload a maximum of 6 images.",
+          });
+        }
+        for (const file of req.files.images) {
+          const url = await uploadToCloudinary(file.buffer, "images", file.originalname);
+          imageUrls.push(url);
+        }
+      }
+
+      if (req.files.videos) {
+        if (req.files.videos.length > 2) {
+          return res.status(400).json({
+            success: false,
+            message: "You can upload a maximum of 2 videos.",
+          });
+        }
+        for (const file of req.files.videos) {
+          const url = await uploadToCloudinary(file.buffer, "videos", file.originalname);
+          videoUrls.push(url);
+        }
+      }
     }
 
     const newApartment = await Apartment.create({
@@ -33,6 +66,9 @@ exports.createApartment = async (req, res) => {
       price: price.toString(),
       status: "available",
       amenities: Array.isArray(amenities) ? amenities.join(",") : amenities || "",
+      apartment_type: apartment_type || "Suite",
+      images: imageUrls.join(","),
+      videos: videoUrls.join(","),
     });
 
     return res.status(201).json({
@@ -146,7 +182,7 @@ exports.updateApartment = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { title, description, location, price, status, amenities } = req.body;
+    const { title, description, location, price, status, amenities, apartment_type } = req.body;
 
     const apartment = await Apartment.findByPk(id);
     if (!apartment) {
@@ -156,14 +192,53 @@ exports.updateApartment = async (req, res) => {
       });
     }
 
+    const { uploadToCloudinary } = require("../config/cloudinaryConfig");
+    let imageUrls = apartment.images ? apartment.images.split(",") : [];
+    let videoUrls = apartment.videos ? apartment.videos.split(",") : [];
+
+    // Parse and stream files to Cloudinary if uploaded (completely replaces old lists)
+    if (req.files) {
+      if (req.files.images) {
+        if (req.files.images.length > 6) {
+          return res.status(400).json({
+            success: false,
+            message: "You can upload a maximum of 6 images.",
+          });
+        }
+        imageUrls = [];
+        for (const file of req.files.images) {
+          const url = await uploadToCloudinary(file.buffer, "images", file.originalname);
+          imageUrls.push(url);
+        }
+      }
+
+      if (req.files.videos) {
+        if (req.files.videos.length > 2) {
+          return res.status(400).json({
+            success: false,
+            message: "You can upload a maximum of 2 videos.",
+          });
+        }
+        videoUrls = [];
+        for (const file of req.files.videos) {
+          const url = await uploadToCloudinary(file.buffer, "videos", file.originalname);
+          videoUrls.push(url);
+        }
+      }
+    }
+
     if (title) apartment.title = title;
     if (description !== undefined) apartment.description = description;
     if (location !== undefined) apartment.location = location;
     if (price) apartment.price = price.toString();
     if (status) apartment.status = status;
+    if (apartment_type) apartment.apartment_type = apartment_type;
     if (amenities !== undefined) {
       apartment.amenities = Array.isArray(amenities) ? amenities.join(",") : amenities || "";
     }
+
+    apartment.images = imageUrls.join(",");
+    apartment.videos = videoUrls.join(",");
 
     await apartment.save();
 

@@ -22,6 +22,21 @@ async function finalizePaymentSuccess(bookingId, paymentId) {
       apartment.status = "booked";
       await apartment.save();
     }
+
+    // Send Payment Confirmation Notifications
+    const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
+    await sendNotification({
+      userId: booking.user_id,
+      message: `Your booking (ID: ${booking.id}) for "${apartment ? apartment.title : 'Suite'}" has been paid for and confirmed successfully! Check-in: ${booking.check_in}, Check-out: ${booking.check_out}. We look forward to welcoming you!`,
+      emailSubject: "Suite Booking Confirmed 🏨✨",
+      emailBodyText: `<h3>Payment Confirmed & Booking Secured!</h3><p>We are delighted to confirm that we have successfully received your payment of <b>$${booking.total_price}</b>.</p><p><b>Booking Details:</b><br/><b>Apartment:</b> ${apartment ? apartment.title : 'Suite'}<br/><b>Check-in:</b> ${booking.check_in}<br/><b>Check-out:</b> ${booking.check_out}</p><p>Your executive suite is secured. Welcome to Seven Hills Suites!</p>`
+    });
+
+    await notifyAdmins({
+      message: `Payment received and verified for Booking ID ${booking.id}. Amount: $${booking.total_price}. Apartment: "${apartment ? apartment.title : 'Suite'}".`,
+      emailSubject: "Payment Verified & Booking Confirmed 🔔💰",
+      emailBodyText: `<h3>Payment Confirmation Alert</h3><p>A booking payment has been successfully verified.</p><p><b>Booking ID:</b> ${booking.id}<br/><b>Apartment:</b> ${apartment ? apartment.title : 'Suite'}<br/><b>Total Price:</b> $${booking.total_price}<br/><b>Payment Method:</b> ${payment ? payment.payment_method : 'N/A'}</p>`
+    });
   }
 }
 
