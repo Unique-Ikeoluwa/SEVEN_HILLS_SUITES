@@ -3,18 +3,35 @@ const db = require("../models");
 const { Wallets } = db;
 
 
-async function walletCreate() {
+async function walletGen() {
     const mnemonic = Mnemonic.fromEntropy(
     crypto.getRandomValues(new Uint8Array(16))
   );
 
   const wallet = Wallet.fromPhrase(mnemonic.phrase);
+  
 
   return { wallet, mnemonic: mnemonic.phrase };
 
 
 }
 
-async function name(params) {
+function verifySignature(message, signature) {
+  return verifyMessage(message, signature);
+}
+
+
+async function walletCreate() {
+
+    const { wallet, mnemonic } = generateWalletFromSeed();
+
+    await Wallets.create({
+        
+    })
+
+}
+
+
+async function transferOut(params) {
     
 }
