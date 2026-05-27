@@ -1,7 +1,6 @@
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 
-// Configure Cloudinary if credentials exist
 const isCloudinaryConfigured =
   process.env.CLOUDINARY_CLOUD_NAME &&
   process.env.CLOUDINARY_API_KEY &&
@@ -20,7 +19,7 @@ if (isCloudinaryConfigured) {
   );
 }
 
-// Multer parser setup using memory storage (to buffer files for direct streaming to Cloudinary)
+
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {

@@ -331,6 +331,61 @@ This document serves as the absolute technical reference for frontend engineers 
 
 ---
 
+## 🔔 App Notification Services
+
+### 1. Get All Notifications
+* **Endpoint**: `GET /notifications`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "id": 14,
+      "user_id": "e30cb7b8-2a1f-44e2-9b2f-3f62916b9b3e",
+      "message": "Your booking for \"Royal Gold Suite\" has been initialized successfully.",
+      "is_read": "false",
+      "createdAt": "2026-05-27T01:25:30.000Z",
+      "updatedAt": "2026-05-27T01:25:30.000Z"
+    }
+  ]
+}
+```
+
+### 2. Mark All Notifications as Read
+* **Endpoint**: `PUT /notifications/read-all`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "All notifications marked as read."
+}
+```
+
+### 3. Mark Single Notification as Read
+* **Endpoint**: `PUT /notifications/:id/read`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Notification marked as read.",
+  "data": {
+    "id": 14,
+    "user_id": "e30cb7b8-2a1f-44e2-9b2f-3f62916b9b3e",
+    "message": "Your booking for \"Royal Gold Suite\" has been initialized successfully.",
+    "is_read": "true",
+    "createdAt": "2026-05-27T01:25:30.000Z",
+    "updatedAt": "2026-05-27T01:28:10.000Z"
+  }
+}
+```
+
+---
+
 ## 🔌 Socket.io Real-time Operations
 Connect to `PORT:8300` (Socket connection must include JWT token in handshake auth or query):
 ```javascript
