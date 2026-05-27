@@ -135,7 +135,7 @@ const renderEmailHtml = (fullName, title, messageBody) => {
           </div>
           <div class="footer">
             <p>© 2026 Seven Hills Suites. All rights reserved.</p>
-            <p>If you have any questions, contact us at <a href="mailto:support@sevenhills.com">support@sevenhills.com</a></p>
+            <p>If you have any questions, contact us at <a href="mailto:${process.env.EMAIL_USER || 'support@sevenhills.com'}">${process.env.EMAIL_USER || 'support@sevenhills.com'}</a></p>
           </div>
         </div>
       </div>
@@ -156,26 +156,43 @@ const sendSpamFreeEmail = async ({ to, subject, html, text }) => {
     }
 
     const transporter = getTransporter();
-    
-    // Generate clean message ID to avoid spam filters
-    const domain = process.env.EMAIL_USER ? process.env.EMAIL_USER.split("@")[1] : "sevenhills.com";
-    const uniqueMessageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}@${domain}>`;
+    const emailUser = process.env.EMAIL_USER || "no-reply@sevenhills.com";
+    const domain = emailUser.split("@")[1] || "sevenhills.com";
+
+    // Detect if authenticated sender is Gmail or another consumer domain
+    const isConsumerDomain = domain.includes("gmail.com") || domain.includes("yahoo") || domain.includes("outlook") || domain.includes("hotmail");
+
+    // Clean emojis from the subject line to prevent modern machine learning spam classifiers from penalizing the mail
+    const cleanSubject = subject.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "").trim();
 
     const mailOptions = {
-      from: `"Seven Hills Suites" <${process.env.EMAIL_USER || "no-reply@sevenhills.com"}>`,
+      from: `"Seven Hills Suites" <${emailUser}>`,
       to,
-      subject,
+      subject: cleanSubject,
       text,
       html,
-      // Spam protection headers:
-      headers: {
+    };
+
+    // Tune headers dynamically depending on sending domain context
+    if (isConsumerDomain) {
+      // For consumer domains (like gmail.com), custom message IDs and bulk/list headers trigger automated anti-spoof/phishing flags
+      mailOptions.priority = "high";
+      mailOptions.headers = {
+        "X-Mailer": "Nodemailer",
+        "X-Priority": "1",
+        "Importance": "High"
+      };
+    } else {
+      // For private corporate domains, standard list hygiene and tracking headers promote positive deliverability scoring
+      const uniqueMessageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}@${domain}>`;
+      mailOptions.headers = {
         "Message-ID": uniqueMessageId,
         "Precedence": "bulk",
         "X-Auto-Response-Loop": "on",
-        "List-Unsubscribe": `<mailto:unsubscribe@sevenhills.com?subject=unsubscribe>`
-      },
-      priority: "high"
-    };
+        "List-Unsubscribe": `<mailto:unsubscribe@${domain}?subject=unsubscribe>`
+      };
+      mailOptions.priority = "high";
+    }
 
     const info = await transporter.sendMail(mailOptions);
     console.log(`[EMAIL] Alert successfully dispatched: ${info.messageId}`);

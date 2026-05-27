@@ -123,7 +123,7 @@ exports.createBooking = async (req, res) => {
   }
 };
 
-// Get Bookings for Logged-In User
+
 exports.getUserBookings = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -155,7 +155,7 @@ exports.getUserBookings = async (req, res) => {
   }
 };
 
-// Get All Bookings (Admin Only)
+
 exports.getAllBookings = async (req, res) => {
   try {
     if (!isAdmin(req.user)) {
@@ -196,7 +196,7 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-// Get Booking By ID
+
 exports.getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -245,7 +245,7 @@ exports.getBookingById = async (req, res) => {
   }
 };
 
-// Cancel Booking
+
 exports.cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
