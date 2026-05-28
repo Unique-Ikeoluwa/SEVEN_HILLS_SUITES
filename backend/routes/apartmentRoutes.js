@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const apartmentController = require("../controllers/apartmentController");
-const { authMiddleware } = require("../middlewares/authUserMiddleware");
+const { authMiddleware, adminMiddleware } = require("../middlewares/authUserMiddleware");
 
 const { upload } = require("../config/cloudinaryConfig");
 
@@ -9,19 +9,21 @@ const { upload } = require("../config/cloudinaryConfig");
 router.get("/", apartmentController.getApartments);
 router.get("/:id", apartmentController.getApartmentById);
 
-// Admin-only protected routes (protection verified in controller)
+// Admin-only protected routes
 router.post(
   "/",
   authMiddleware,
+  adminMiddleware,
   upload.fields([{ name: 'images', maxCount: 6 }, { name: 'videos', maxCount: 2 }]),
   apartmentController.createApartment
 );
 router.put(
   "/:id",
   authMiddleware,
+  adminMiddleware,
   upload.fields([{ name: 'images', maxCount: 6 }, { name: 'videos', maxCount: 2 }]),
   apartmentController.updateApartment
 );
-router.delete("/:id", authMiddleware, apartmentController.deleteApartment);
+router.delete("/:id", authMiddleware, adminMiddleware, apartmentController.deleteApartment);
 
 module.exports = router;

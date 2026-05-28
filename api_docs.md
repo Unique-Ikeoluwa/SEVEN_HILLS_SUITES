@@ -159,6 +159,7 @@ This document serves as the absolute technical reference for frontend engineers 
   - `price` (number, required)
   - `description` (string, optional)
   - `location` (string, optional)
+  - `currency` (string, optional, ENUM: `USD`, `NGN`, default: `USD`)
   - `amenities` (comma-separated string or array, optional)
   - `apartment_type` (string, optional, e.g., "Executive Suite", "Penthouse", "Studio")
 * **Multipart Files**:
@@ -175,6 +176,7 @@ This document serves as the absolute technical reference for frontend engineers 
     "description": "Presidential suite of Seven Hills",
     "location": "Lekki, Lagos",
     "price": "250000",
+    "currency": "USD",
     "status": "available",
     "amenities": "Pool,Wifi,Spa",
     "apartment_type": "Executive Suite",
@@ -381,6 +383,129 @@ This document serves as the absolute technical reference for frontend engineers 
     "createdAt": "2026-05-27T01:25:30.000Z",
     "updatedAt": "2026-05-27T01:28:10.000Z"
   }
+}
+```
+
+---
+
+## ⚙️ System Settings & Exchange Rate Control (Admin Only)
+
+### 1. Get System Settings
+* **Endpoint**: `GET /admin/settings`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "System settings retrieved successfully.",
+  "data": {
+    "usd_to_ngn_rate": 1650.00
+  }
+}
+```
+
+### 2. Update System Settings
+* **Endpoint**: `PUT /admin/settings`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`, `Content-Type: application/json`
+* **Request Body**:
+```json
+{
+  "usd_to_ngn_rate": 1650.00
+}
+```
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "System settings updated successfully.",
+  "data": {
+    "usd_to_ngn_rate": 1650.00
+  }
+}
+```
+
+---
+
+## 🪙 Blockchain Wallet Operations (Admin Only)
+
+### 1. Get Wallet Balance and Address
+* **Endpoint**: `GET /wallet`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "wallet": {
+    "address": "0xCeefE779Daa37D500531172ebcb228cc88d7759C",
+    "balance": "4.250000"
+  }
+}
+```
+
+### 2. Recover Wallet Mnemonic Phrase
+* **Endpoint**: `GET /wallet/mnemonic`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "wallet": {
+    "address": "0xCeefE779Daa37D500531172ebcb228cc88d7759C",
+    "mnemonic": "apple banana cherry ...",
+    "private_key": "0xdecryptedprivatekey..."
+  }
+}
+```
+
+### 3. Send ETH Transfer
+* **Endpoint**: `POST /wallet/transfer`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`, `Content-Type: application/json`
+* **Request Body**:
+```json
+{
+  "toAddress": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
+  "amount": "1.25"
+}
+```
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Transfer successful!",
+  "data": {
+    "txHash": "0x894cdc18def3810fb378fd312f8f56763c185ff98753fd78fab49f6e111f997a",
+    "from": "0xCeefE779Daa37D500531172ebcb228cc88d7759C",
+    "to": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
+    "amount": "1.250000 ETH",
+    "newBalance": "4.250000 ETH",
+    "confirmations": 1
+  }
+}
+```
+
+### 4. Get Wallet Transaction History
+* **Endpoint**: `GET /wallet/history`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Transactions retrieved successfully!",
+  "address": "0xCeefE779Daa37D500531172ebcb228cc88d7759C",
+  "count": 1,
+  "transactions": [
+    {
+      "hash": "0x894cdc18def3810fb378fd312f8f56763c185ff98753fd78fab49f6e111f997a",
+      "blockNumber": "19283746",
+      "timeStamp": "1716892530",
+      "from": "0xCeefE779Daa37D500531172ebcb228cc88d7759C",
+      "to": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
+      "value": "1250000000000000000",
+      "formattedValue": "1.25 ETH",
+      "confirmations": "120",
+      "date": "2026-05-28T09:29:06.621Z"
+    }
+  ]
 }
 ```
 

@@ -17,7 +17,7 @@ exports.createApartment = async (req, res) => {
       });
     }
 
-    const { title, description, location, price, amenities, apartment_type } = req.body;
+    const { title, description, location, price, amenities, apartment_type, currency } = req.body;
 
     if (!title || !price) {
       return res.status(400).json({
@@ -65,6 +65,7 @@ exports.createApartment = async (req, res) => {
       location: location || "",
       price: price.toString(),
       status: "available",
+      currency: currency || "USD",
       amenities: Array.isArray(amenities) ? amenities.join(",") : amenities || "",
       apartment_type: apartment_type || "Suite",
       images: imageUrls.join(","),
@@ -182,7 +183,7 @@ exports.updateApartment = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { title, description, location, price, status, amenities, apartment_type } = req.body;
+    const { title, description, location, price, status, amenities, apartment_type, currency } = req.body;
 
     const apartment = await Apartment.findByPk(id);
     if (!apartment) {
@@ -233,6 +234,12 @@ exports.updateApartment = async (req, res) => {
     if (price) apartment.price = price.toString();
     if (status) apartment.status = status;
     if (apartment_type) apartment.apartment_type = apartment_type;
+    if (currency) {
+      const allowedCurrencies = ["USD", "NGN"];
+      if (allowedCurrencies.includes(currency)) {
+        apartment.currency = currency;
+      }
+    }
     if (amenities !== undefined) {
       apartment.amenities = Array.isArray(amenities) ? amenities.join(",") : amenities || "";
     }

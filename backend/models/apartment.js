@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
     location: DataTypes.STRING,
     price: DataTypes.STRING,
     status: DataTypes.ENUM('available', 'booked'),
+    currency: {
+      type: DataTypes.ENUM('USD', 'NGN'),
+      defaultValue: 'USD',
+      allowNull: false
+    },
     amenities: DataTypes.STRING,
     images: DataTypes.TEXT,
     videos: DataTypes.TEXT,
