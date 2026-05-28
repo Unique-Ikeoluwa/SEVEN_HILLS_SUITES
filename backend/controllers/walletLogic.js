@@ -143,6 +143,7 @@ async function transferFunds(req, res) {
       });
     }
 
+    
     const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
     if (!dbWallet) {
       return res.status(404).json({
