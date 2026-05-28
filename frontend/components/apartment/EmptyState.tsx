@@ -15,7 +15,7 @@ export function EmptyState({ onClear }: EmptyStateProps) {
 
       <button
         onClick={onClear}
-        className="mt-4 text-blue-500 text-sm hover:underline"
+        className="mt-4 text-[#0057FF] text-sm hover:underline"
       >
         Clear filters
       </button>

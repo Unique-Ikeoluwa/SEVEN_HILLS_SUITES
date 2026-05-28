@@ -5,6 +5,7 @@ import { MdSavedSearch } from "react-icons/md";
 import { FiHome, FiSearch } from "react-icons/fi";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 export default function Hero() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState("");

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { cardVariants1, containerVariants1 } from "@/animations/amenityVariants";
 import { sideRooms, featuredRoom } from "@/data/featured";
 import Image from "next/image";
+
 export default function Featured() {
   return (
     <section className="bg-[#F1F2F3] py-24">

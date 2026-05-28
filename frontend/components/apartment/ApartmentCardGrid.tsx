@@ -1,36 +1,41 @@
+import { useRouter } from "next/navigation";
 import { SaveButtons } from "./SaveButtons";
 import { ImageDots } from "./ImageDots";
 import StarRating from "../ui/StarRating";
 import { FiMapPin } from "react-icons/fi";
 import { Apartment } from "@/types/apartment";
 
-
-
 export function ApartmentCardGrid({ apt, saved, onToggleSave }: { apt: Apartment; saved: boolean; onToggleSave: () => void }) {
+  const router = useRouter();
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-      <div className="relative h-48">
+    <div
+      onClick={() => router.push(`/apartments/${apt.id}`)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col cursor-pointer"
+      >
+      <div className="relative h-44 sm:h-48">
         <img src={apt.image} alt={apt.name} className="w-full h-full object-cover" />
-        <SaveButtons saved={saved} onToggle={onToggleSave} />
+        <div onClick={(e) => e.stopPropagation()}>
+          <SaveButtons saved={saved} onToggle={onToggleSave} />
+        </div>
         <ImageDots />
       </div>
-      <div className="p-4 flex flex-col gap-2 flex-1">
+      <div className="p-3 sm:p-4 flex flex-col gap-2 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="font-bold text-gray-900">{apt.name}</h3>
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base">{apt.name}</h3>
             <StarRating rating={parseFloat(apt.rating)} />
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="text-right">
-              <p className="text-xs text-blue-500 font-semibold leading-none">Excellent</p>
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <div className="text-right hidden sm:block">
+              <p className="text-xs text-[#0057FF] font-semibold leading-none">Excellent</p>
               <p className="text-[10px] text-gray-400">{apt.reviews} reviews</p>
             </div>
-            <div className="w-8 h-8 bg-blue-600 text-white text-xs font-bold rounded-lg flex items-center justify-center">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 text-white text-xs font-bold rounded-lg flex items-center justify-center">
               {apt.rating}
             </div>
           </div>
         </div>
-        <p className="text-xs text-blue-500 font-medium flex items-center gap-1">
+        <p className="text-xs text-[#0057FF] font-medium flex items-center gap-1">
           <FiMapPin size={12} />
           {apt.location}
         </p>

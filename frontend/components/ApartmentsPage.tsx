@@ -13,6 +13,7 @@ import { EmptyState } from "./apartment/EmptyState";
 import { sortApartments, filterApartments, paginateApartments } from "@/utils/apartmentHelpers";
 
 export default function ApartmentsPage() {
+
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -21,6 +22,7 @@ export default function ApartmentsPage() {
 
   const [activeFilter, setActiveFilter] = useState<FilterOption>(typeParam);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
   const [page, setPage] = useState(1);
   const [saved, setSaved] = useState<Set<number>>(new Set());
   const [sortBy, setSortBy] = useState<SortOption>("Property type");
@@ -49,7 +51,6 @@ export default function ApartmentsPage() {
     },
     [searchParams, router]
   );
-
   const toggleSave = (id: number) => {
     setSaved((prev) => {
       const next = new Set(prev);
@@ -58,25 +59,20 @@ export default function ApartmentsPage() {
     });
   };
 
-  // Filter by type first
   const filtered = filterApartments(ALL_APARTMENTS, activeFilter);
 
-  // Then apply search on top of the type filter
   const searchFiltered = searchParam.length >= 3
-    ? filtered.filter((apt) => {
-        const q = searchParam.toLowerCase();
-        return (
-          apt.name.toLowerCase().includes(q) ||
-          apt.type.toLowerCase().includes(q) ||
-          apt.location.toLowerCase().includes(q) ||
-          apt.amenities.some((a) => a.toLowerCase().includes(q))
-        );
-      })
-    : filtered;
-
+  ? filtered.filter((apt) => {
+    const q = searchParam.toLowerCase();
+    return (
+      apt.name.toLowerCase().includes(q) ||
+      apt.type.toLowerCase().includes(q) ||
+      apt.location.toLowerCase().includes(q) ||
+      apt.amenities.some((a) => a.toLowerCase().includes(q))
+    );
+  })
+  : filtered;
   const hasSearchWithNoResults = searchParam.length >= 3 && searchFiltered.length === 0;
-
-  // If search had no results, fall back to all apartments sorted by rating
   const displayApartments = hasSearchWithNoResults
     ? sortApartments(ALL_APARTMENTS, "Rating")
     : sortApartments(searchFiltered, sortBy);
@@ -88,40 +84,33 @@ export default function ApartmentsPage() {
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Page header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-10">
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-8 sm:py-10">
         <div className="max-w-7xl mx-auto">
-          <p className="text-blue-500 font-semibold text-sm mb-2 tracking-wide">Our Apartments</p>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
-            Every Stay, Thoughtfully<br />Furnished.
+          <p className="text-[#0057FF] font-semibold text-sm mb-2 tracking-wide">Our Apartments</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
+            Every Stay, Thoughtfully<br className="hidden sm:block" /> Furnished.
           </h1>
-          <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
-            Browse our range of fully serviced apartments across Makurdi and Kampala. Every unit is move-in ready,
-            amenity-packed, and designed to feel like home.
+          <p className="text-gray-500 text-sm sm:text-base max-w-2xl leading-relaxed">
+            Browse our range of fully serviced apartments across Makurdi and Kampala. Every unit is move-in ready, amenity-packed, and designed to feel like home.
           </p>
         </div>
       </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-5">Explore Accommodations</h2>
-
-        {/* No-results message */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-5">Explore Accommodations</h2>
         {hasSearchWithNoResults && (
-          <div className="mb-8 p-6 bg-blue-50 border border-blue-100 rounded-2xl">
-            <p className="text-gray-700 text-base font-medium leading-relaxed">
+          <div className="mb-8 p-4 sm:p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+            <p className="text-gray-700 text-sm sm:text-base font-medium leading-relaxed">
               We don&apos;t have what you&apos;re looking for but we have other available apartments carefully curated for you.
             </p>
           </div>
         )}
-
-        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <SortDropdown sortBy={sortBy} sortOpen={sortOpen} setSortOpen={setSortOpen} setSortBy={setSortBy} />
             {activeFilter !== "All" && (
-              <div className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full text-sm text-gray-700 bg-white">
+              <div className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-full text-xs sm:text-sm text-gray-700 bg-white">
                 {activeFilter}
                 <button onClick={() => handleFilterChange("All")} className="text-gray-400 hover:text-gray-700 transition-colors">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -132,16 +121,16 @@ export default function ApartmentsPage() {
               </div>
             )}
             {searchParam && (
-              <div className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full text-sm text-gray-700 bg-white">
+              <div className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-full text-xs sm:text-sm text-gray-700 bg-white">
                 &ldquo;{searchParam}&rdquo;
                 <button
                   onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.delete("search");
-                    router.push(`/apartments?${params.toString()}`);
-                  }}
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.delete("search");
+                  router.push(`/apartments?${params.toString()}`);
+                                    }}
                   className="text-gray-400 hover:text-gray-700 transition-colors"
-                >
+                  >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -149,12 +138,10 @@ export default function ApartmentsPage() {
                 </button>
               </div>
             )}
-            <span className="text-sm text-gray-400">{displayApartments.length} properties</span>
+            <span className="text-xs sm:text-sm text-gray-400">{displayApartments.length} properties</span>
           </div>
           <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
         </div>
-
-        {/* Listings */}
         {paginated.length === 0 ? (
           <EmptyState onClear={() => handleFilterChange("All")} />
         ) : viewMode === "list" ? (
@@ -164,13 +151,12 @@ export default function ApartmentsPage() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {paginated.map((apt) => (
               <ApartmentCardGrid key={apt.id} apt={apt} saved={saved.has(apt.id)} onToggleSave={() => toggleSave(apt.id)} />
             ))}
           </div>
         )}
-
         {totalPages > 1 && (
           <Pagination current={page} total={totalPages} onChange={handlePageChange} />
         )}

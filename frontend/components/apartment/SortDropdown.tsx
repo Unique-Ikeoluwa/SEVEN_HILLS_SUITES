@@ -21,7 +21,7 @@ export function SortDropdown({sortBy, sortOpen, setSortOpen, setSortBy,}: SortDr
                     key={opt}
                     onClick={() => { setSortBy(opt); setSortOpen(false); }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                    sortBy === opt ? "text-blue-500 font-medium" : "text-gray-700"
+                    sortBy === opt ? "text-[#0057FF] font-medium" : "text-gray-700"
                     }`}
                 >
                     {opt}

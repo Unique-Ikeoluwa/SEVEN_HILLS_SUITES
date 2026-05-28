@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { BsVectorPen } from "react-icons/bs";
 import { LiaHashtagSolid } from "react-icons/lia";
+
 export default function Crypto() {
     return (
         <section className="bg-white py-24 overflow-hidden">
