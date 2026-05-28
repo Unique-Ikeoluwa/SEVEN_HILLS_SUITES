@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export default function Crypto() {
   return (
@@ -45,26 +46,16 @@ export default function Crypto() {
                     <div className="w-full h-full bg-linear-to-b from-blue-50 to-white rounded-[36px] overflow-hidden flex items-center justify-center relative">
                         <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-gray-900 rounded-full" />
                         <div className="flex flex-col items-center gap-1 mt-6">
-                            <div className="flex items-center gap-1">
-                                <div className="w-10 h-10 bg-[#1a1a2e] rounded-lg flex items-center justify-center">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <path d="M3 18L7 6L12 14L17 9L21 18" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <circle cx="12" cy="5" r="2.5" fill="#ec4899" />
-                                    </svg>
-                                </div>
-                                <div className="flex flex-col leading-none ml-1">
-                                    <span className="text-[11px] font-bold text-[#1a1a2e] font-serif">Seven</span>
-                                    <span className="text-[11px] font-bold text-blue-500 font-serif">Hills</span>
-                                    <span className="text-[9px] text-gray-400 font-serif">Suites</span>
-                                </div>
+                            <div className="shadow-lg shadow-blue-100">
+                                <Image src="/SevenHills.png" alt="logo" width={220} height={160} />
                             </div>
                         </div>
                     </div>
-                    <motion.div className="absolute -right-6 top-1/3 w-14 h-14 bg-linear-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-200 z-20"
+                    <motion.div className="absolute -right-14 top-1/3 rotate-[-15deg] flex items-center justify-center z-20"
                         animate={{ y: [0, -6, 0] }}
                         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                     >
-                        <span className="text-white font-extrabold text-xl">₿</span>
+                        <Image src="/btc.png" alt="btc" width={130} height={130} />
                     </motion.div>
                     <motion.div className="absolute -left-5 top-1/2 w-10 h-10 bg-linear-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-200 z-20"
                         animate={{ y: [0, 6, 0] }}
