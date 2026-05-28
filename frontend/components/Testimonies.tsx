@@ -10,26 +10,22 @@ export default function Testimonies() {
   const [active, setActive] = useState(0);
 
   return (
-    <section className="bg-gray-100 py-20">
-      <div className="max-w-3xl mx-auto px-6 text-center">
-
-        {/* Quote */}
+    <section className="bg-[#f1f2f3] py-20">
+      <div className="max-w-5xl mx-auto px-5 text-center">
         <div className="min-h-30 flex items-center justify-center mb-10">
           <AnimatePresence mode="wait">
             <motion.p
               key={active}
-              className="text-2xl md:text-3xl font-semibold text-gray-900 leading-snug"
+              className="text-2xl md:text-4xl font-medium text-gray-900 leading-snug"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
-              &ldquo;{testimonials[active].quote}&rdquo;
+              {testimonials[active].quote}
             </motion.p>
           </AnimatePresence>
         </div>
-
-        {/* Avatar + Name + Stars */}
         <AnimatePresence mode="wait">
           <motion.div
             key={active + "-meta"}
@@ -57,8 +53,8 @@ export default function Testimonies() {
               onClick={() => setActive(i)}
               className={`rounded-full transition-all duration-300 cursor-pointer ${
                 i === active
-                  ? "w-5 h-2.5 bg-blue-500"
-                  : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
+                  ? "w-2.5 h-2.5 bg-[#0057ff]"
+                  : "w-2.5 h-2.5 border border-blue-200 rounded bg-[#eaecf0] hover:bg-gray-400"
               }`}
             />
           ))}

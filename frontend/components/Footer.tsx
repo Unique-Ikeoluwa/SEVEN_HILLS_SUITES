@@ -25,8 +25,8 @@ export default function Footer() {
           />
         </div>
         <div className="hidden md:block self-stretch w-px bg-gray-200 mx-12" />
-        <div className="flex flex-col gap-8 flex-1">
-          <div className="flex flex-wrap gap-8">
+        <div className="flex flex-col gap-2 md:gap-8 flex-1">
+          <div className="flex flex-wrap gap-5 md:gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
@@ -38,7 +38,7 @@ export default function Footer() {
             ))}
           </div>
           <div>
-            <p className="text-[24px] font-bold tracking-widest text-gray-900 uppercase mb-4">
+            <p className="md:text-[24px] font-bold tracking-widest text-gray-900 uppercase mb-4">
               Contact
             </p>
             <p className="text-base text-gray-500 mb-2">sevenhill@gmail.com</p>
@@ -59,7 +59,7 @@ export default function Footer() {
         </div>
       </motion.div>
       <div className="border-t border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 md:px-14 py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-base text-gray-400">
+        <div className="max-w-6xl mx-auto px-6 md:px-14 py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-sm md:text-base text-gray-400">
           <p>© 2026 Seven Hills Suites. All rights reserved.</p>
           <div className="flex items-center gap-6">
             {["Terms", "Privacy", "Cookies"].map((item) => (
