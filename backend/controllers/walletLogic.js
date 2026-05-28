@@ -41,11 +41,28 @@ async function getWalletDetails(req, res) {
       });
     }
 
+    let balance = wallet.balance;
+    const rpcUrl = process.env.ETH_RPC_URL;
+    if (rpcUrl) {
+      try {
+        const { JsonRpcProvider, formatEther } = require("ethers");
+        const provider = new JsonRpcProvider(rpcUrl);
+        const balanceWei = await provider.getBalance(wallet.public_address);
+        balance = formatEther(balanceWei);
+
+        // Synchronize dynamic live balance back to database record
+        wallet.balance = balance;
+        await wallet.save();
+      } catch (rpcErr) {
+        console.error("Failed to fetch live balance from RPC:", rpcErr.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       wallet: {
         address: wallet.public_address,
-        balance: wallet.balance,
+        balance: balance,
       },
     });
   } catch (error) {
@@ -139,34 +156,9 @@ async function transferFunds(req, res) {
     // Dynamic blockchain interaction
     const rpcUrl = process.env.ETH_RPC_URL;
     if (!rpcUrl) {
-      // Simulation Mode (Mock execution when ETH_RPC_URL is not configured)
-      console.log("[ETH WALLET] Simulation Mode active (no ETH_RPC_URL defined). Simulating transfer...");
-      const simulatedHash = "0x" + crypto.randomBytes(32).toString("hex");
-      
-      let currentBal = parseFloat(dbWallet.balance) || 0;
-      let transferAmt = parseFloat(amount);
-      if (currentBal >= transferAmt) {
-        dbWallet.balance = (currentBal - transferAmt).toFixed(6);
-        await dbWallet.save();
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient funds for transfer. Available: ${currentBal} ETH, Requested: ${transferAmt} ETH`,
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "Transfer successful (SIMULATION MODE)!",
-        data: {
-          txHash: simulatedHash,
-          from: dbWallet.public_address,
-          to: toAddress,
-          amount: transferAmt.toFixed(6) + " ETH",
-          newBalance: dbWallet.balance + " ETH",
-          confirmations: 1,
-          is_simulated: true,
-        },
+      return res.status(400).json({
+        success: false,
+        message: "Real blockchain transactions cannot be executed because the RPC node URL (ETH_RPC_URL) is not configured in the environment settings.",
       });
     }
 
@@ -239,46 +231,7 @@ async function getWalletHistory(req, res) {
     // Check if we are running in live mode or simulation mode
     const rpcUrl = process.env.ETH_RPC_URL;
     if (!rpcUrl) {
-      // Simulation mode fallback
-      console.log("[ETH WALLET] Simulation Mode active (no ETH_RPC_URL). Returning simulated history...");
-      return res.status(200).json({
-        success: true,
-        message: "Transactions retrieved successfully (SIMULATION MODE)!",
-        address: address,
-        count: 2,
-        transactions: [
-          {
-            hash: "0x894cdc18def3810fb378fd312f8f56763c185ff98753fd78fab49f6e111f997a",
-            blockNumber: "19283746",
-            timeStamp: Math.floor(Date.now() / 1000 - 3600).toString(),
-            from: address,
-            to: "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
-            value: "1250000000000000000",
-            formattedValue: "1.25 ETH",
-            gas: "21000",
-            gasPrice: "30000000000",
-            confirmations: "120",
-            isError: "0",
-            txreceipt_status: "1",
-            is_simulated: true,
-          },
-          {
-            hash: "0x3ab3717df3d17983637fe17ebcb221a7c5b6abfe2c34bc1a4f89d311fef8e72b",
-            blockNumber: "19280012",
-            timeStamp: Math.floor(Date.now() / 1000 - 86400).toString(),
-            from: "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
-            to: address,
-            value: "5500000000000000000",
-            formattedValue: "5.5 ETH",
-            gas: "21000",
-            gasPrice: "25000000000",
-            confirmations: "340",
-            isError: "0",
-            txreceipt_status: "1",
-            is_simulated: true,
-          }
-        ]
-      });
+      console.log("[ETH WALLET] RPC node (ETH_RPC_URL) is not configured. Retrieving on-chain history directly from Etherscan...");
     }
 
     // Live Mainnet Etherscan fetch
