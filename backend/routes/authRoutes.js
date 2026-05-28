@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
 const { authMiddleware } = require("../middlewares/authUserMiddleware");
+const { authRateLimiter } = require("../middlewares/rateLimitMiddleware");
+
+router.use(authRateLimiter);
 
 router.post("/register", authController.register);
 router.post("/verify-otp", authController.verifyOtp);

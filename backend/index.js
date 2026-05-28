@@ -10,8 +10,25 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Enable CORS
-app.use(cors());
+// Configure robust CORS middleware
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : ["*"];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, postman, or curl requests)
+    if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS policy."));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+}));
+
+// Apply global general rate limiting
+const { generalRateLimiter } = require("./middlewares/rateLimitMiddleware");
+app.use(generalRateLimiter);
 
 // Body parser middleware
 app.use(express.json());
