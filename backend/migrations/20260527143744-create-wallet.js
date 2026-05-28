@@ -13,7 +13,8 @@ module.exports = {
         type: Sequelize.STRING
       },
       balance: {
-        type: Sequelize.INTEGER
+        type: Sequelize.STRING,
+        defaultValue: '0'
       },
       private_key: {
         type: Sequelize.STRING

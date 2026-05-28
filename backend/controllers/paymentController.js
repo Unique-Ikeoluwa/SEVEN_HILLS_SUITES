@@ -1,5 +1,5 @@
 const db = require("../models");
-const { Payments, bookings, Apartment } = db;
+const { Payments, bookings, Apartment, Users } = db;
 const crypto = require("crypto");
 
 // Helper to update booking and apartment status on successful payment
@@ -23,19 +23,29 @@ async function finalizePaymentSuccess(bookingId, paymentId) {
       await apartment.save();
     }
 
+    // Load user for receipt profile
+    const user = await Users.findByPk(booking.user_id);
+
+    // Generate luxurious visual receipt HTML
+    const { renderReceiptHtml } = require("../utils/receiptHelper");
+    const receiptHtml = renderReceiptHtml({ booking, payment, apartment, user });
+
     // Send Payment Confirmation Notifications
     const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
+    
+    // User receipt and app notification
     await sendNotification({
       userId: booking.user_id,
-      message: `Your booking (ID: ${booking.id}) for "${apartment ? apartment.title : 'Suite'}" has been paid for and confirmed successfully! Check-in: ${booking.check_in}, Check-out: ${booking.check_out}. We look forward to welcoming you!`,
-      emailSubject: "Suite Booking Confirmed 🏨✨",
-      emailBodyText: `<h3>Payment Confirmed & Booking Secured!</h3><p>We are delighted to confirm that we have successfully received your payment of <b>$${booking.total_price}</b>.</p><p><b>Booking Details:</b><br/><b>Apartment:</b> ${apartment ? apartment.title : 'Suite'}<br/><b>Check-in:</b> ${booking.check_in}<br/><b>Check-out:</b> ${booking.check_out}</p><p>Your executive suite is secured. Welcome to Seven Hills Suites!</p>`
+      message: `Your booking (ID: ${booking.id}) for "${apartment ? apartment.title : 'Suite'}" has been paid and confirmed! Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}.`,
+      emailSubject: "Your Payment Receipt - Seven Hills Suites 🏨🧾",
+      emailBodyText: receiptHtml
     });
 
+    // Admin receipt and alert notification
     await notifyAdmins({
-      message: `Payment received and verified for Booking ID ${booking.id}. Amount: $${booking.total_price}. Apartment: "${apartment ? apartment.title : 'Suite'}".`,
-      emailSubject: "Payment Verified & Booking Confirmed 🔔💰",
-      emailBodyText: `<h3>Payment Confirmation Alert</h3><p>A booking payment has been successfully verified.</p><p><b>Booking ID:</b> ${booking.id}<br/><b>Apartment:</b> ${apartment ? apartment.title : 'Suite'}<br/><b>Total Price:</b> $${booking.total_price}<br/><b>Payment Method:</b> ${payment ? payment.payment_method : 'N/A'}</p>`
+      message: `Payment received and verified for Booking ID ${booking.id}. Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}. Guest: ${user ? user.fullName : 'Valued Guest'} (${user ? user.email : 'N/A'}).`,
+      emailSubject: "Payment Verified & Receipt Issued 🔔🧾",
+      emailBodyText: receiptHtml
     });
   }
 }
