@@ -1,8 +1,24 @@
 const db = require("../models");
-const { Payments, bookings, Apartment, Users } = db;
+const { Payments, bookings, Apartment, Users, Wallets } = db;
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 
-// Helper to update booking and apartment status on successful payment
+function getExchangeRate() {
+  try {
+    const settingsPath = path.join(__dirname, "../config/settings.json");
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+      return parseFloat(settings.usd_to_ngn_rate) || 1500.0;
+    }
+  } catch (error) {
+    console.error("Failed to read exchange rate:", error);
+  }
+  return 1500.0;
+}
+
+
+
 async function finalizePaymentSuccess(bookingId, paymentId) {
   const payment = await Payments.findByPk(paymentId);
   if (payment) {
@@ -16,24 +32,24 @@ async function finalizePaymentSuccess(bookingId, paymentId) {
     booking.payment_status = "paid";
     await booking.save();
 
-    // Set apartment to booked
+    
     const apartment = await Apartment.findByPk(booking.apartment_id);
     if (apartment) {
       apartment.status = "booked";
       await apartment.save();
     }
 
-    // Load user for receipt profile
+  
     const user = await Users.findByPk(booking.user_id);
 
-    // Generate luxurious visual receipt HTML
+    
     const { renderReceiptHtml } = require("../utils/receiptHelper");
     const receiptHtml = renderReceiptHtml({ booking, payment, apartment, user });
 
-    // Send Payment Confirmation Notifications
+    
     const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
     
-    // User receipt and app notification
+   
     await sendNotification({
       userId: booking.user_id,
       message: `Your booking (ID: ${booking.id}) for "${apartment ? apartment.title : 'Suite'}" has been paid and confirmed! Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}.`,
@@ -41,7 +57,7 @@ async function finalizePaymentSuccess(bookingId, paymentId) {
       emailBodyText: receiptHtml
     });
 
-    // Admin receipt and alert notification
+    
     await notifyAdmins({
       message: `Payment received and verified for Booking ID ${booking.id}. Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}. Guest: ${user ? user.fullName : 'Valued Guest'} (${user ? user.email : 'N/A'}).`,
       emailSubject: "Payment Verified & Receipt Issued 🔔🧾",
@@ -50,11 +66,7 @@ async function finalizePaymentSuccess(bookingId, paymentId) {
   }
 }
 
-// ----------------------------------------------------
-// PAYSTACK PAYMENT INTEGRATION
-// ----------------------------------------------------
 
-// Initialize Paystack Payment
 exports.initializePaystack = async (req, res) => {
   try {
     const { bookingId } = req.body;
@@ -81,13 +93,22 @@ exports.initializePaystack = async (req, res) => {
       });
     }
 
+    const apartment = await Apartment.findByPk(booking.apartment_id);
+    const apartmentCurrency = (apartment && apartment.currency) ? apartment.currency.toUpperCase() : "USD";
+
+    let paystackAmount = parseFloat(booking.total_price);
+    if (apartmentCurrency === "USD") {
+      const usdToNgnRate = getExchangeRate();
+      paystackAmount = paystackAmount * usdToNgnRate;
+    }
+
     const reference = `PAY-${crypto.randomBytes(8).toString("hex")}`;
-    const amountKobo = Math.round(parseFloat(booking.total_price) * 100);
+    const amountKobo = Math.round(paystackAmount * 100);
 
     // Save pending payment record in db
     const pendingPayment = await Payments.create({
       booking_id: booking.id,
-      amount: booking.total_price,
+      amount: paystackAmount.toFixed(2),
       currency: "NGN",
       payment_method: "paystack",
       transaction_reference: reference,
@@ -157,7 +178,7 @@ exports.initializePaystack = async (req, res) => {
   }
 };
 
-// Verify Paystack Payment
+
 exports.verifyPaystack = async (req, res) => {
   try {
     const { reference } = req.query;
@@ -236,15 +257,10 @@ exports.verifyPaystack = async (req, res) => {
   }
 };
 
-// ----------------------------------------------------
-// CRYPTOCURRENCY PAYMENT INTEGRATION
-// ----------------------------------------------------
-
-// Preset cryptocurrency addresses
 const CRYPTO_WALLETS = {
   USDT: process.env.CRYPTO_USDT_ADDR || "TX5d8t7fHkpqSm129hWJnB8bQvPtm182zL", // TRC20 address
   BTC: process.env.CRYPTO_BTC_ADDR || "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",   // Bitcoin address
-  ETH: process.env.CRYPTO_ETH_ADDR || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", // Ethereum address
+  ETH: process.env.CRYPTO_ETH_ADDR || process.env.CRYPTO_ETH_ADDRESS || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", // Ethereum address
 };
 
 // Converted prices (Simulated exchange rates relative to USD)
@@ -289,19 +305,32 @@ exports.initializeCrypto = async (req, res) => {
       });
     }
 
-    // Convert booking total price (assuming NGN or USD)
-    // For simplicity, let's treat the booking price in USD for conversion.
-    // If NGN, we can convert using a base rate (e.g. 1 USD = 1500 NGN).
+    const apartment = await Apartment.findByPk(booking.apartment_id);
+    const apartmentCurrency = (apartment && apartment.currency) ? apartment.currency.toUpperCase() : "USD";
+
     let priceInUSD = parseFloat(booking.total_price);
-    // If the currency seems like NGN (which is default for Nigerian Suite app), convert it:
-    if (priceInUSD > 5000) {
-      priceInUSD = priceInUSD / 1500; // Mock exchange rate: 1500 NGN = 1 USD
+    if (apartmentCurrency === "NGN") {
+      const usdToNgnRate = getExchangeRate();
+      priceInUSD = priceInUSD / usdToNgnRate;
     }
 
     const rate = COIN_RATES[selectedCoin];
     const cryptoAmount = (priceInUSD * rate).toFixed(selectedCoin === "USDT" ? 2 : 6);
 
     const reference = `CRYPTO-${selectedCoin}-${crypto.randomBytes(8).toString("hex")}`;
+
+    // Resolve the active wallet address dynamically
+    let walletAddress = CRYPTO_WALLETS[selectedCoin];
+    if (selectedCoin === "ETH") {
+      try {
+        const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
+        if (dbWallet && dbWallet.public_address) {
+          walletAddress = dbWallet.public_address;
+        }
+      } catch (dbErr) {
+        console.warn("Could not fetch standalone ETH wallet from database, using fallback address:", dbErr.message);
+      }
+    }
 
     // Create pending payment in database
     const pendingPayment = await Payments.create({
@@ -321,9 +350,9 @@ exports.initializeCrypto = async (req, res) => {
         totalUSD: priceInUSD.toFixed(2),
         cryptoAmount,
         currency: selectedCoin,
-        walletAddress: CRYPTO_WALLETS[selectedCoin],
+        walletAddress,
         reference,
-        qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(CRYPTO_WALLETS[selectedCoin])}`,
+        qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(walletAddress)}`,
       },
     });
   } catch (error) {
