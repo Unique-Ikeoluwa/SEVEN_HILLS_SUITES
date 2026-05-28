@@ -3,8 +3,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
+
 export default function Navbar() {
+
   const [menuOpen, setMenuOpen] = useState(false);
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "Apartments", path: "/apartments" },
+    { name: "About Us", path: "/about-us" },
+    { name: "Contact", path: "/contact" },
+  ];
+  
   return (
     <>
       <nav className="bg-white/43 border border-[#C0C0C07D] sticky top-0 z-50">
@@ -17,13 +26,13 @@ export default function Navbar() {
               <Image src="/SevenHills.png" alt="SevenHills" width={80} height={50} />
             </Link>
             <div className="hidden justify-center md:flex items-center gap-3">
-              {["Home", "Apartments", "About Us", "Contact"].map((item) => (
+              {navLinks.map((item) => (
                 <Link
-                  key={item}
-                  href={`/${item.toLowerCase().replace(" ", "-")}`}
-                  className="text-black p-2.5 text-[15px] font-normal hover:text-blue-500 transition-colors"
+                  key={item.name}
+                  href={item.path}
+                  className="text-black p-2.5 text-[15px] font-normal hover:text-[#0057FF] transition-colors"
                 >
-                  {item}
+                  {item.name}
                 </Link>
               ))}
             </div>
@@ -45,14 +54,14 @@ export default function Navbar() {
         </div>
         {menuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 px-5 pb-5 flex flex-col gap-3">
-            {["Home", "Apartments", "About Us", "Contact"].map((item) => (
+            {navLinks.map((item) => (
               <Link
-                key={item}
-                href={`/${item.toLowerCase().replace(" ", "-")}`}
+                key={item.name}
+                href={item.path}
                 onClick={() => setMenuOpen(false)}
-                className="text-black py-2 text-[15px] font-normal hover:text-blue-500 transition-colors"
+                className="text-black py-2 text-[15px] font-normal hover:text-[#0057FF] transition-colors"
               >
-                {item}
+                {item.name}
               </Link>
             ))}
             <div className="flex gap-3 pt-2">

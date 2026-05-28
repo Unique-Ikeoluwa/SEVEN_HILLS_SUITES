@@ -6,6 +6,7 @@ import { amenities, extraAmenities } from "@/data/amenities";
 import AmenityCard from "@/components/ui/AmenityCard";
 import { containerVariants, expandVariants, extraCardVariants } from "@/animations/amenityVariants";
 import { MdKeyboardDoubleArrowDown } from "react-icons/md";
+
 export default function Whats() {
   const [expanded, setExpanded] = useState(false);
   return (

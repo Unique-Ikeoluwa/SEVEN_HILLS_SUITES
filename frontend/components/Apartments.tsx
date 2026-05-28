@@ -5,6 +5,7 @@ import { containerVariants2, cardVariants2 } from "@/animations/amenityVariants"
 import { apartments } from "@/data/apartments";
 import { ApartmentType } from "@/types/apartment";
 import { FaArrowRight } from "react-icons/fa6";
+
 export default function Apartments() {
   const router = useRouter();
   const handleCardClick = (type: ApartmentType) => {
