@@ -15,13 +15,16 @@ module.exports = (sequelize, DataTypes) => {
   }
   Wallets.init({
     public_address: DataTypes.STRING,
-    balance: DataTypes.INTEGER,
+    balance: {
+      type: DataTypes.STRING,
+      defaultValue: '0'
+    },
     private_key: DataTypes.STRING,
     mnemonic: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Wallets',
-    tableName: 'wallet'
+    tableName: 'wallets'
   });
   return Wallets;
 };
