@@ -36,12 +36,12 @@ export default function Hero() {
               Powerful, self-serve product and growth analytics to help you convert, engage, and retain more.
             </p>
             <motion.div className="flex flex-wrap gap-3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}>
-              <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} className="px-4 py-2 bg-[#2B3037] text-white text-lg md:text-[20px] font-medium rounded-xl w-full sm:w-64 h-14 hover:bg-[#2d2d4e] transition-colors cursor-pointer">
+              <motion.a href="/apartments" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} className="px-4 py-2 bg-[#2B3037] text-white text-lg md:text-[20px] font-medium rounded-xl w-full sm:w-64 h-14 hover:bg-[#2d2d4e] transition-colors cursor-pointer">
                 Explore accomodations
-              </motion.button>
-              <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} className="px-4 py-2 bg-[#0057FF] text-white text-lg md:text-[20px] font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
+              </motion.a>
+              <motion.a href="/apartments" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} className="px-4 py-2 bg-[#0057FF] text-white text-lg md:text-[20px] font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
                 Book now
-              </motion.button>
+              </motion.a>
             </motion.div>
             <motion.div className="flex items-center gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.4 }}>
               <div className="flex">

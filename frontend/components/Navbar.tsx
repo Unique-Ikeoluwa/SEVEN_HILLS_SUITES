@@ -1,10 +1,22 @@
 "use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useAuthStore } from "@/store/authStore";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { HiMenu, HiX } from "react-icons/hi";
 
 export default function Navbar() {
+  const { isAuthenticated, logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleAuthAction = () => {
+    if (isAuthenticated) {
+      logout();
+      router.push("/");
+    }
+  };
 
   const [menuOpen, setMenuOpen] = useState(false);
   const navLinks = [
@@ -13,7 +25,7 @@ export default function Navbar() {
     { name: "About Us", path: "/about-us" },
     { name: "Contact", path: "/contact" },
   ];
-  
+
   return (
     <>
       <nav className="bg-white/43 border border-[#C0C0C07D] sticky top-0 z-50">
@@ -41,9 +53,15 @@ export default function Navbar() {
             <Link href="/apartments" className="px-4 py-2 bg-[#2B3037] text-white text-base font-medium rounded-xl hover:bg-[#050505] transition-colors">
               Explore
             </Link>
-            <button className="px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
-              Book now
-            </button>
+            {isAuthenticated ? (
+              <button onClick={handleAuthAction} className="px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
+                Logout
+              </button>
+            ) : (
+              <Link href="/login" className="px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
+                Login
+              </Link>
+            )}  
           </div>
           <button
             className="md:hidden text-gray-700 p-2"
@@ -68,9 +86,15 @@ export default function Navbar() {
               <Link href="/apartments" onClick={() => setMenuOpen(false)} className="flex-1 text-center px-4 py-2 bg-[#2B3037] text-white text-base font-medium rounded-xl hover:bg-[#050505] transition-colors">
                 Explore
               </Link>
-              <button className="flex-1 px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
-                Book now
-              </button>
+              {isAuthenticated ? (
+                <button onClick={handleAuthAction} className="flex-1 px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
+                  Logout
+                </button>
+              ) : (
+                <Link href="/login" className="flex-1 px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
+                  Login
+                </Link>
+              )}
             </div>
           </div>
         )}

@@ -27,7 +27,7 @@ export const apartments: ApartmentCard[] = [
 export const MOCK_APARTMENT: ApartmentDetail = {
   id: 1,
   name: "Room D1",
-  type: "1 bedroom",
+  type: "1 Bedroom",
   price: 120000,
   rating: 4.5,
   reviewCount: 11,
@@ -35,7 +35,7 @@ export const MOCK_APARTMENT: ApartmentDetail = {
     "Lorem ipsum dolor sit amet consectetur. Commodo elementum sed quis porttitor dui in felis. Tellus morbi mus nec congue orci. Lorem ipsum dolor sit amet consectetur. Commodo elementum sed quis porttitor dui in felis. Tellus morbi mus nec congue orci.Lorem ipsum dolor sit amet consectetur. Commodo elementum sed quis porttitor dui in felis. Tellus morbi mus nec congue orci.",
     "Lorem ipsum dolor sit amet consectetur. Amet pulvinar pharetra tellus diam vulputate fermentum. Rhoncus facilisis nunc eleifend proin massa.",
   ],
-  bedrooms: 3,
+  bedrooms: 1,
   bathrooms: 2,
   furnished: true,
   appliances: {
@@ -90,9 +90,9 @@ export const ALL_APARTMENTS: Apartment[] = Array.from({ length: 47 }, (_, i) => 
   const prices = [75000, 95000, 120000, 150000, 200000];
   const amenitiesByType: Record<ApartmentType, string[]> = {
     Studio: ["Studio", "Single Bed", "Kitchen", "Tv"],
-    "1 Bedroom": ["1 bedroom", "King Bed", "Kitchen", "Tv"],
-    "2 Bedroom": ["2 bedrooms", "King Bed", "Kitchen", "Tv", "Living Room"],
-    "Furnished & Serviced": ["1 bedroom", "Queen Bed", "Kitchen", "Tv", "Workspace"],
+    "1 Bedroom": ["1 Bedroom", "King Bed", "Kitchen", "Tv"],
+    "2 Bedroom": ["2 Bedrooms", "King Bed", "Kitchen", "Tv", "Living Room"],
+    "Furnished & Serviced": ["1 Bedroom", "Queen Bed", "Kitchen", "Tv", "Workspace"],
   };
   const imgs = [
     "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format&fit=crop",
