@@ -6,6 +6,7 @@ import "./globals.css";
 import Topbar from "@/components/Topbar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { SocketProvider } from "@/context/SocketContext";
 
 export default function RootLayout({
   children,
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Topbar />
-        <Navbar />
+        <SocketProvider>
+          <Topbar />
+          <Navbar />
 
-        <main>{children}</main>
+          <main>{children}</main>
 
-        <Footer />
+          <Footer />
+        </SocketProvider>
       </body>
     </html>
   );
