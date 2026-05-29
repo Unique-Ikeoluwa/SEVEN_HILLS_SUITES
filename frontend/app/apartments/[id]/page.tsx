@@ -1,5 +1,5 @@
 import ApartmentDetailsPage from "@/components/ApartmentDetailsPage";
-import { ALL_APARTMENTS } from "@/data/apartments";
+import { api } from "@/utils/api";
 import { notFound } from "next/navigation";
 
 interface PageProps {
@@ -8,16 +8,21 @@ interface PageProps {
 
 export default async function Page({ params }: PageProps) {
   const resolvedParams = await params;
-  
-  const apartmentId = parseInt(resolvedParams.id, 10);
+  let liveApartmentData = null;
 
-  const selectedApartment = ALL_APARTMENTS.find((apt) => apt.id === apartmentId);
-
-  if (!selectedApartment) {
+  try {
+    const res = await api.get(`/apartments/${resolvedParams.id}`);
+    if (res.data?.success) {
+      liveApartmentData = res.data.data;
+    }
+  } catch (err) {
+    console.error("Single item parameter tracking resolution failure:", err);
+  }
+  if (!liveApartmentData) {
     notFound();
   }
 
   return (
-    <ApartmentDetailsPage apartment={selectedApartment} />
+    <ApartmentDetailsPage apartment={liveApartmentData} />
   );
 }
