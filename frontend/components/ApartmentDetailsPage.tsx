@@ -1,15 +1,33 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { MOCK_APARTMENT } from "@/data/apartments";
+import { Apartment } from "@/types/apartment";
 import { ImageGallery } from "./details/ImageGallery";
 import { Review } from "./details/Review";
+import { MOCK_APARTMENT } from "@/data/apartments";
 import { Features } from "./details/Features";
 import { MdKeyboardArrowLeft } from "react-icons/md";
+import Link from "next/link";
+import { useBookingStore } from "@/store/bookingStore";
+import { useAuthStore } from "@/store/authStore";
 
+interface ApartmentDetailsPageProps {
+  apartment: Apartment;
+}
 
-export default function ApartmentDetailsPage() {
+export default function ApartmentDetailsPage({ apartment }: ApartmentDetailsPageProps) {
+  const { isAuthenticated } = useAuthStore();
   const router = useRouter();
-  const apt = MOCK_APARTMENT;
+  const { setBasePrice } = useBookingStore();
+
+  const handleBookingRedirect = () => {
+  setBasePrice(apartment.price);
+  if (isAuthenticated) {
+    router.push(`/apartments/${apartment.id}/booking`);
+  } else {
+    router.push(`/login?redirect=/apartments/${apartment.id}/booking`);
+  }
+};
+  const apt = MOCK_APARTMENT
 
   return (
     <div className="min-h-screen bg-white">
@@ -23,9 +41,9 @@ export default function ApartmentDetailsPage() {
         </button>
         <ImageGallery images={apt.images} />
         <div className="mb-8 space-y-3">
-          {apt.description.map((para, i) => (
-            <p key={i} className="text-gray-600 text-[15px] leading-relaxed">{para}</p>
-          ))}
+          <p className="text-gray-600 text-[15px] leading-relaxed">
+            Beautiful luxury {apartment.type} located in {apartment.location}. Featuring top-tier amenities, comfortable workspaces, and cozy living conditions designed for your ultimate convenience.
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 rounded-2xl px-4 sm:px-6 py-4 mb-10 border border-gray-100 gap-4 sm:gap-0">
           <div className="flex items-center gap-3">
@@ -33,14 +51,15 @@ export default function ApartmentDetailsPage() {
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            <span className="font-semibold text-gray-900 text-lg">{apt.type}</span>
+            <span className="font-semibold text-gray-900 text-lg">{apartment.type}</span>
           </div>
           <div className="flex items-center justify-between sm:justify-end gap-4">
             <div className="text-left sm:text-right">
-              <p className="text-xs text-gray-400 mb-0.5">Total package:</p>
-              <p className="text-xl font-bold text-gray-900">₦ {apt.price.toLocaleString()}.00</p>
+              <span className="block text-xs text-gray-400 font-medium leading-none mb-1">Total package:</span>
+              <span className="block text-xl font-bold text-gray-900">₦ {apartment.price.toLocaleString()}.00</span>
             </div>
-            <button className="px-5 sm:px-6 py-2.5 bg-[#0057FF] text-white text-sm font-semibold rounded-xl hover:bg-[#0f53db] transition-colors shrink-0">
+            <button  onClick={handleBookingRedirect}
+              className="px-5 sm:px-6 py-2.5 bg-[#0057FF] text-white text-sm font-semibold rounded-xl hover:bg-[#0f53db] transition-colors shrink-0">
               Book now
             </button>
           </div>

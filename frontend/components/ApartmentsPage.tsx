@@ -125,10 +125,10 @@ export default function ApartmentsPage() {
                 &ldquo;{searchParam}&rdquo;
                 <button
                   onClick={() => {
-                  const params = new URLSearchParams(searchParams.toString());
-                  params.delete("search");
-                  router.push(`/apartments?${params.toString()}`);
-                                    }}
+                    const params = new URLSearchParams(searchParams.toString());
+                    params.delete("search");
+                    router.push(`/apartments?${params.toString()}`);
+                  }}
                   className="text-gray-400 hover:text-gray-700 transition-colors"
                   >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
