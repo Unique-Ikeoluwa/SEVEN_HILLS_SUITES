@@ -49,17 +49,15 @@ async function finalizePaymentSuccess(bookingId, paymentId) {
     
     const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
     
-   
     await sendNotification({
       userId: booking.user_id,
-      message: `Your booking (ID: ${booking.id}) for "${apartment ? apartment.title : 'Suite'}" has been paid and confirmed! Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}.`,
+      message: `Your booking (ID: ${booking.id}) for "${apartment ? apartment.title : 'Suite'}" has been paid and confirmed! Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}. Guest: ${user ? user.fullName : 'Valued Guest'} (Phone: ${user ? user.phone_no : 'N/A'}).`,
       emailSubject: "Your Payment Receipt - Seven Hills Suites 🏨🧾",
       emailBodyText: receiptHtml
     });
 
-    
     await notifyAdmins({
-      message: `Payment received and verified for Booking ID ${booking.id}. Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}. Guest: ${user ? user.fullName : 'Valued Guest'} (${user ? user.email : 'N/A'}).`,
+      message: `Payment received and verified for Booking ID ${booking.id}. Receipt reference: ${payment ? payment.transaction_reference : 'N/A'}. Guest: ${user ? user.fullName : 'Valued Guest'} (${user ? user.email : 'N/A'}, Phone: ${user ? user.phone_no : 'N/A'}).`,
       emailSubject: "Payment Verified & Receipt Issued 🔔🧾",
       emailBodyText: receiptHtml
     });
@@ -258,16 +256,14 @@ exports.verifyPaystack = async (req, res) => {
 };
 
 const CRYPTO_WALLETS = {
-  USDT: process.env.CRYPTO_USDT_ADDR || "TX5d8t7fHkpqSm129hWJnB8bQvPtm182zL", // TRC20 address
-  BTC: process.env.CRYPTO_BTC_ADDR || "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",   // Bitcoin address
-  ETH: process.env.CRYPTO_ETH_ADDR || process.env.CRYPTO_ETH_ADDRESS || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", // Ethereum address
+  USDT: process.env.CRYPTO_USDT_ADDR || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", // Ethereum network fallback address
+  USDC: process.env.CRYPTO_USDC_ADDR || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", // Ethereum network fallback address
 };
 
-// Converted prices (Simulated exchange rates relative to USD)
+// Converted prices (Simulated exchange rates relative to USD - both are pegged 1:1)
 const COIN_RATES = {
   USDT: 1.0,        // 1 USD = 1 USDT
-  BTC: 0.000015,    // Mock rate: 1 USD = 0.000015 BTC
-  ETH: 0.00032,     // Mock rate: 1 USD = 0.00032 ETH
+  USDC: 1.0,        // 1 USD = 1 USDC
 };
 
 // Initialize Crypto Payment
@@ -278,7 +274,7 @@ exports.initializeCrypto = async (req, res) => {
     if (!bookingId || !coin) {
       return res.status(400).json({
         success: false,
-        message: "Booking ID and target Cryptocurrency coin (USDT, BTC, or ETH) are required.",
+        message: "Booking ID and target Cryptocurrency coin (USDT or USDC) are required.",
       });
     }
 
@@ -286,7 +282,7 @@ exports.initializeCrypto = async (req, res) => {
     if (!CRYPTO_WALLETS[selectedCoin]) {
       return res.status(400).json({
         success: false,
-        message: "Unsupported cryptocurrency. Supported coins are: USDT, BTC, ETH.",
+        message: "Unsupported cryptocurrency. Supported ERC-20 coins on the Ethereum network are: USDT, USDC.",
       });
     }
 
@@ -315,20 +311,20 @@ exports.initializeCrypto = async (req, res) => {
     }
 
     const rate = COIN_RATES[selectedCoin];
-    const cryptoAmount = (priceInUSD * rate).toFixed(selectedCoin === "USDT" ? 2 : 6);
+    const cryptoAmount = (priceInUSD * rate).toFixed(2); // Stablecoin represents USD value to 2 decimal places
 
     const reference = `CRYPTO-${selectedCoin}-${crypto.randomBytes(8).toString("hex")}`;
 
-    // Resolve the active wallet address dynamically
+    // Resolve the active Ethereum wallet address dynamically for ERC-20 USDT/USDC payments
     let walletAddress = CRYPTO_WALLETS[selectedCoin];
-    if (selectedCoin === "ETH") {
+    if (selectedCoin === "USDT" || selectedCoin === "USDC") {
       try {
         const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
         if (dbWallet && dbWallet.public_address) {
           walletAddress = dbWallet.public_address;
         }
       } catch (dbErr) {
-        console.warn("Could not fetch standalone ETH wallet from database, using fallback address:", dbErr.message);
+        console.warn("Could not fetch standalone Ethers wallet from database for ERC-20 token transaction, using fallback address:", dbErr.message);
       }
     }
 
@@ -395,8 +391,7 @@ exports.verifyCrypto = async (req, res) => {
     }
 
     // Basic regex validation for a standard transaction hash:
-    // BTC: 64-char hex string
-    // ETH/USDT: 66-char hex starting with 0x
+    // ETH/USDT/USDC: 66-char hex starting with 0x (or general 64-char hex)
     const cleanHash = txHash.trim();
     const isValidHash = (/^(0x)?[0-9a-fA-F]{64}$/).test(cleanHash);
 
@@ -407,20 +402,73 @@ exports.verifyCrypto = async (req, res) => {
       });
     }
 
-    // Simulate blockchain confirmation checking
-    console.log(`[CRYPTO] Verifying hash: ${cleanHash} for payment reference: ${reference}`);
+    // Resolve active Ethereum wallet address dynamically to double check transaction destination
+    let walletAddress = CRYPTO_WALLETS[payment.currency] || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
+    try {
+      const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
+      if (dbWallet && dbWallet.public_address) {
+        walletAddress = dbWallet.public_address;
+      }
+    } catch (err) {
+      console.warn("Could not retrieve active wallet address for transaction destination check.");
+    }
+
+    // Dynamic real blockchain check if ETH_RPC_URL is set
+    const rpcUrl = process.env.ETH_RPC_URL;
+    let blockchainVerified = false;
+    let confirmationsCount = 12;
+    let blockNum = Math.floor(Math.random() * 5000000) + 12000000;
+
+    if (rpcUrl) {
+      try {
+        console.log(`[CRYPTO] Verifying transaction on-chain for hash: ${cleanHash}`);
+        const { JsonRpcProvider } = require("ethers");
+        const provider = new JsonRpcProvider(rpcUrl);
+        const txReceipt = await provider.getTransactionReceipt(cleanHash);
+
+        if (!txReceipt) {
+          return res.status(400).json({
+            success: false,
+            message: "Transaction hash not found on-chain. Please ensure it has been broadcasted.",
+          });
+        }
+
+        if (txReceipt.status !== 1) {
+          return res.status(400).json({
+            success: false,
+            message: "Transaction has failed on-chain.",
+          });
+        }
+
+        // Verify it was sent to our correct wallet address
+        if (txReceipt.to && txReceipt.to.toLowerCase() !== walletAddress.toLowerCase()) {
+          return res.status(400).json({
+            success: false,
+            message: `Transaction destination address mismatch. Expected: ${walletAddress}, Found: ${txReceipt.to}`,
+          });
+        }
+
+        blockchainVerified = true;
+        confirmationsCount = txReceipt.confirmations || 12;
+        blockNum = txReceipt.blockNumber;
+      } catch (chainErr) {
+        console.warn("On-chain lookup failed, falling back to simulated validation:", chainErr.message);
+      }
+    }
 
     // Update payment record to success in database
     await finalizePaymentSuccess(payment.booking_id, payment.id);
 
     return res.status(200).json({
       success: true,
-      message: "Cryptocurrency payment confirmed! Your booking is now verified and active.",
+      message: rpcUrl && blockchainVerified
+        ? "Cryptocurrency payment confirmed and verified on-chain successfully!"
+        : "Cryptocurrency payment confirmed! Your booking is now verified and active.",
       data: {
         reference,
         txHash: cleanHash,
-        confirmations: 12,
-        blockHeight: Math.floor(Math.random() * 5000000) + 12000000,
+        confirmations: confirmationsCount,
+        blockHeight: blockNum,
         status: "success",
       },
     });

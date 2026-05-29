@@ -104,14 +104,13 @@ async function showMnemonic(req, res) {
       });
     }
 
-    const decryptedKey = await getDecryptedPrivateKey(wallet.public_address);
+    // const decryptedKey = await getDecryptedPrivateKey(wallet.public_address);
 
     return res.status(200).json({
       success: true,
       wallet: {
         address: wallet.public_address,
         mnemonic: wallet.mnemonic,
-        private_key: decryptedKey,
       },
     });
   } catch (error) {

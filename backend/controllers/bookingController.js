@@ -10,6 +10,7 @@ const isAdmin = (user) => {
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user.id;
+    const user = await Users.findByPk(userId);
     const { apartment_id, check_in, check_out } = req.body;
 
     if (!apartment_id || !check_in || !check_out) {
@@ -89,22 +90,26 @@ exports.createBooking = async (req, res) => {
     const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
     await sendNotification({
       userId: userId,
-      message: `Your booking for "${apartment.title}" has been initialized successfully. Total amount: $${totalPrice}. Please proceed to complete your payment.`,
+      message: `Your booking for "${apartment.title}" has been initialized successfully. Total amount: $${totalPrice}. Please proceed to complete your payment. Guest: ${user ? user.fullName : 'Valued Guest'} (Phone: ${user ? user.phone_no : 'N/A'}).`,
       emailSubject: "Booking Initialized 🔑",
-      emailBodyText: `<h3>Booking Initialized Successfully</h3><p>We are pleased to inform you that your reservation for <b>${apartment.title}</b> is currently pending.</p><p><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Price:</b> $${totalPrice}</p><p>Please initialize the checkout process to secure your stay.</p>`
+      emailBodyText: `<h3>Booking Initialized Successfully</h3><p>We are pleased to inform you that your reservation for <b>${apartment.title}</b> is currently pending.</p><p><b>Guest Name:</b> ${user ? user.fullName : 'Valued Guest'}<br/><b>Guest Phone:</b> ${user ? user.phone_no : 'N/A'}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Price:</b> $${totalPrice}</p><p>Please initialize the checkout process to secure your stay.</p>`
     });
 
     await notifyAdmins({
-      message: `New booking initialized for "${apartment.title}" by user ID ${userId}. Total: $${totalPrice}.`,
+      message: `New booking initialized for "${apartment.title}" by guest: ${user ? user.fullName : 'Valued Guest'} (Phone: ${user ? user.phone_no : 'N/A'}). Total: $${totalPrice}.`,
       emailSubject: "New Pending Booking Alert 🔔",
-      emailBodyText: `<p>A new booking has been initialized on the system.</p><p><b>Apartment:</b> ${apartment.title}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Amount:</b> $${totalPrice}</p>`
+      emailBodyText: `<p>A new booking has been initialized on the system.</p><p><b>Guest Name:</b> ${user ? user.fullName : 'Valued Guest'}<br/><b>Guest Phone:</b> ${user ? user.phone_no : 'N/A'}<br/><b>Apartment:</b> ${apartment.title}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Amount:</b> $${totalPrice}</p>`
     });
 
     return res.status(201).json({
       success: true,
       message: "Booking initialized successfully! Please proceed to payment.",
       data: {
-        booking,
+        booking: {
+          ...booking.toJSON(),
+          guest_name: user ? user.fullName : "N/A",
+          guest_phone: user ? user.phone_no : "N/A",
+        },
         apartment: {
           title: apartment.title,
           location: apartment.location,
@@ -136,14 +141,28 @@ exports.getUserBookings = async (req, res) => {
           as: "apartment",
           attributes: ["id", "title", "description", "location", "price", "status"],
         },
+        {
+          model: Users,
+          as: "user",
+          attributes: ["id", "fullName", "email", "phone_no"],
+        },
       ],
       order: [["createdAt", "DESC"]],
     });
 
+    const formattedBookings = userBookings.map((b) => {
+      const bJson = b.toJSON();
+      return {
+        ...bJson,
+        guest_name: bJson.user ? bJson.user.fullName : "N/A",
+        guest_phone: bJson.user ? bJson.user.phone_no : "N/A",
+      };
+    });
+
     return res.status(200).json({
       success: true,
-      count: userBookings.length,
-      data: userBookings,
+      count: formattedBookings.length,
+      data: formattedBookings,
     });
   } catch (error) {
     console.error("Get User Bookings Error:", error);
@@ -181,10 +200,19 @@ exports.getAllBookings = async (req, res) => {
       order: [["createdAt", "DESC"]],
     });
 
+    const formattedBookings = allBookings.map((b) => {
+      const bJson = b.toJSON();
+      return {
+        ...bJson,
+        guest_name: bJson.user ? bJson.user.fullName : "N/A",
+        guest_phone: bJson.user ? bJson.user.phone_no : "N/A",
+      };
+    });
+
     return res.status(200).json({
       success: true,
-      count: allBookings.length,
-      data: allBookings,
+      count: formattedBookings.length,
+      data: formattedBookings,
     });
   } catch (error) {
     console.error("Get All Bookings Error:", error);
@@ -231,9 +259,14 @@ exports.getBookingById = async (req, res) => {
       });
     }
 
+    const bookingJson = booking.toJSON();
     return res.status(200).json({
       success: true,
-      data: booking,
+      data: {
+        ...bookingJson,
+        guest_name: bookingJson.user ? bookingJson.user.fullName : "N/A",
+        guest_phone: bookingJson.user ? bookingJson.user.phone_no : "N/A",
+      },
     });
   } catch (error) {
     console.error("Get Booking By ID Error:", error);
@@ -286,25 +319,31 @@ exports.cancelBooking = async (req, res) => {
       await apartment.save();
     }
 
+    const user = await Users.findByPk(booking.user_id);
+
     // Send Booking Cancellation Notifications
     const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
     await sendNotification({
       userId: booking.user_id,
-      message: `Your booking for booking ID ${booking.id} has been cancelled successfully.`,
+      message: `Your booking for booking ID ${booking.id} has been cancelled successfully. Guest: ${user ? user.fullName : 'Valued Guest'} (Phone: ${user ? user.phone_no : 'N/A'}).`,
       emailSubject: "Booking Cancellation Confirmed ❌",
-      emailBodyText: `<h3>Booking Cancellation Confirmed</h3><p>This email confirms that your booking (ID: ${booking.id}) has been cancelled.</p><p>If you did not request this, please contact support immediately.</p>`
+      emailBodyText: `<h3>Booking Cancellation Confirmed</h3><p>This email confirms that your booking (ID: ${booking.id}) has been cancelled.</p><p><b>Guest Name:</b> ${user ? user.fullName : 'Valued Guest'}<br/><b>Guest Phone:</b> ${user ? user.phone_no : 'N/A'}</p><p>If you did not request this, please contact support immediately.</p>`
     });
 
     await notifyAdmins({
-      message: `Booking ID ${booking.id} has been cancelled.`,
+      message: `Booking ID ${booking.id} has been cancelled by guest: ${user ? user.fullName : 'Valued Guest'} (Phone: ${user ? user.phone_no : 'N/A'}).`,
       emailSubject: "Booking Cancelled 🔔",
-      emailBodyText: `<p>Booking (ID: ${booking.id}) has been cancelled by the user or an administrator. The reserved suite status has been restored to available.</p>`
+      emailBodyText: `<p>Booking (ID: ${booking.id}) has been cancelled by the user or an administrator. Guest: ${user ? user.fullName : 'Valued Guest'} (${user ? user.email : 'N/A'}, Phone: ${user ? user.phone_no : 'N/A'}). The reserved suite status has been restored to available.</p>`
     });
 
     return res.status(200).json({
       success: true,
       message: "Booking cancelled successfully.",
-      data: booking,
+      data: {
+        ...booking.toJSON(),
+        guest_name: user ? user.fullName : "N/A",
+        guest_phone: user ? user.phone_no : "N/A",
+      },
     });
   } catch (error) {
     console.error("Cancel Booking Error:", error);

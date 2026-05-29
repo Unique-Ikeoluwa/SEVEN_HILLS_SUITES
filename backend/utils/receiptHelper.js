@@ -53,6 +53,10 @@ function renderReceiptHtml({ booking, payment, apartment, user }) {
               <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${user?.email || 'N/A'}</td>
             </tr>
             <tr>
+              <td style="padding: 6px 0; color: #64748b;">Phone Number:</td>
+              <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${user?.phone_no || 'N/A'}</td>
+            </tr>
+            <tr>
               <td style="padding: 6px 0; color: #64748b;">Method of Payment:</td>
               <td style="padding: 6px 0; color: #0f172a; font-weight: 600; text-transform: uppercase;">${paymentMethod}</td>
             </tr>
