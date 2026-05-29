@@ -37,7 +37,6 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
   setPaymentMethod: (method) => set({ paymentMethod: method }),
 
-  // 2. ADD THIS IMPLEMENTATION
   setBasePrice: (price) => set({ basePrice: price }),
 
   total: () => {

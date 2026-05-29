@@ -7,16 +7,8 @@ export interface ApartmentCard {
 }
 
 export type ViewMode = "list" | "grid";
-
-export type SortOption =
-  | "Property type"
-  | "Price: Low to High"
-  | "Price: High to Low"
-  | "Rating";
-
-export type FilterOption =
-  | "All"
-  | ApartmentType;
+export type SortOption = "Property type" | "Price: Low to High" | "Price: High to Low" | "Rating";
+export type FilterOption = "All" | ApartmentType;
 
 export interface Apartment {
   id: number;
@@ -31,6 +23,22 @@ export interface Apartment {
   freeCancellation: boolean;
   breakfastIncluded: boolean;
   distanceCentre: string;
+}
+
+export interface APIApartment {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  price: string;
+  status: string;
+  currency: string;
+  amenities: string;
+  apartment_type: string;
+  images: string;
+  videos?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SortDropdownProps {

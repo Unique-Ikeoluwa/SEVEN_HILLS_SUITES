@@ -6,8 +6,10 @@ import { z } from "zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { api } from "@/utils/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useState, useEffect } from "react";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -16,11 +18,20 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-export default function Login() {
+export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const loginGlobal = useAuthStore((state) => state.login);
+  const setSession = useAuthStore((state) => state.setSession);
   const redirectTarget = searchParams.get("redirect") || "/";
+
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("verified") === "true") {
+      setVerificationSuccess(true);
+    }
+  }, [searchParams]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -28,25 +39,30 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginValues) => {
+    setApiError(null);
+    setVerificationSuccess(false);
     try {
-      loginGlobal({
-        fullName: "Test User", 
-        email: data.email 
-      });
+      const res = await api.post("/auth/login", data);
+      const { token, user } = res.data.data;
+
+      setSession(user, token);
 
       router.push(redirectTarget);
-    } catch (err) {
-      console.error("Login failure event:", err);
+    } catch (err: any) {
+      setApiError(err.response?.data?.message || "Invalid email or password credentials.");
     }
   };
 
   return (
-    <main className="min-h-[calc(100-80px)] bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-[calc(100vh-80px)] bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white border border-gray-100 p-6 sm:p-8 rounded-2xl shadow-sm space-y-6">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome Back</h2>
           <p className="mt-2 text-sm text-gray-500">Sign in to manage and secure your apartment bookings</p>
         </div>
+
+        {verificationSuccess && <div className="p-3.5 text-sm bg-green-50 border border-green-200 text-green-600 rounded-xl text-center font-medium">Account verified successfully! You can now log in.</div>}
+        {apiError && <div className="p-3.5 text-sm bg-red-50 border border-red-200 text-red-600 rounded-xl text-center font-medium">{apiError}</div>}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
@@ -56,7 +72,10 @@ export default function Login() {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Password</Label>
+            <div className="flex justify-between items-center">
+              <Label>Password</Label>
+              <Link href="/forgot-password" className="text-xs font-semibold text-[#0057FF] hover:underline">Forgot password?</Link>
+            </div>
             <Input type="password" placeholder="••••••••" {...register("password")} />
             {errors.password && <p className="text-xs text-red-500 font-medium">{errors.password.message}</p>}
           </div>
@@ -69,13 +88,18 @@ export default function Login() {
             {isSubmitting ? "Signing in..." : "Login"}
           </button>
         </form>
-
         <p className="text-center text-sm text-gray-500">
           Don't have an account?{" "}
-          <Link href={`/register${searchParams.toString() ? '?' + searchParams.toString() : ''}`} className="text-[#0057FF] font-semibold hover:underline">
-            Register here
-          </Link>
+          <Link href="/register" className="text-[#0057FF] font-semibold hover:underline">Register here</Link>
         </p>
+        <div className="border-t border-gray-100 pt-4 text-center">
+          <Link 
+            href="/register-admin" 
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors font-medium"
+          >
+            Are you a staff member? Access Admin Portal
+          </Link>
+        </div>
       </div>
     </main>
   );
