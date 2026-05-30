@@ -1,6 +1,21 @@
 const db = require("../models");
 const { Apartment } = db;
 const { Op } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
+
+function getExchangeRate() {
+  try {
+    const settingsPath = path.join(__dirname, "../config/settings.json");
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+      return parseFloat(settings.usd_to_ngn_rate);
+    }
+  } catch (error) {
+    console.error("Failed to read exchange rate:", error);
+  }
+  return 1500.0;
+}
 
 
 const isAdmin = (user) => {
@@ -59,13 +74,25 @@ exports.createApartment = async (req, res) => {
       }
     }
 
+    const activeCurrency = currency || "USD";
+    const basePrice = parseFloat(price);
+    let calculatedPriceUSD = "0.00";
+
+    if (activeCurrency.toUpperCase() === "NGN") {
+      const rate = getExchangeRate();
+      calculatedPriceUSD = (basePrice / rate).toFixed(2);
+    } else {
+      calculatedPriceUSD = basePrice.toFixed(2);
+    }
+
     const newApartment = await Apartment.create({
       title,
       description: description || "",
       location: location || "",
       price: price.toString(),
+      price_in_usd: calculatedPriceUSD,
       status: "available",
-      currency: currency || "USD",
+      currency: activeCurrency,
       amenities: Array.isArray(amenities) ? amenities.join(",") : amenities || "",
       apartment_type: apartment_type || "Suite",
       images: imageUrls.join(","),
@@ -242,6 +269,17 @@ exports.updateApartment = async (req, res) => {
     }
     if (amenities !== undefined) {
       apartment.amenities = Array.isArray(amenities) ? amenities.join(",") : amenities || "";
+    }
+
+    // Auto-recalculate price_in_usd
+    const finalPriceVal = parseFloat(apartment.price);
+    if (!isNaN(finalPriceVal)) {
+      if (apartment.currency.toUpperCase() === "NGN") {
+        const rate = getExchangeRate();
+        apartment.price_in_usd = (finalPriceVal / rate).toFixed(2);
+      } else {
+        apartment.price_in_usd = finalPriceVal.toFixed(2);
+      }
     }
 
     apartment.images = imageUrls.join(",");
