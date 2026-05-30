@@ -95,8 +95,8 @@ export default function ApartmentDetailsPage({ apartment }: ApartmentDetailsPage
             </button>
           </div>
         </div>
-        <Features />
-        <Review />
+        <Features apartment={apartment}/>
+        <Review apartment={apartment}/>
       </div>
     </div>
   );

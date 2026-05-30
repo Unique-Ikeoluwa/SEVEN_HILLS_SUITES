@@ -39,19 +39,24 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginValues) => {
-    setApiError(null);
-    setVerificationSuccess(false);
-    try {
-      const res = await api.post("/auth/login", data);
-      const { token, user } = res.data.data;
+  setApiError(null);
+  setVerificationSuccess(false);
+  try {
+    const res = await api.post("/auth/login", data);
+    const { token, user } = res.data.data;
 
-      setSession(user, token);
-
+    setSession(user, token);
+    if (user.role === "admin") {
+      router.push("/admin/dashboard");
+    } else {
       router.push(redirectTarget);
-    } catch (err: any) {
-      setApiError(err.response?.data?.message || "Invalid email or password credentials.");
     }
-  };
+
+  } catch (err: any) {
+    setApiError(err.response?.data?.message || "Invalid email or password credentials.");
+  }
+};
+
 
   return (
     <main className="min-h-[calc(100vh-80px)] bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

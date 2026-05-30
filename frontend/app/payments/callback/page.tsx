@@ -21,14 +21,12 @@ export default function PaymentCallbackPage() {
 
     async function verifyPaymentTransaction() {
       try {
-        // Run the verify endpoint transaction call matching your developer's checklist
         const res = await api.get(`/payments/paystack/verify?reference=${reference}`);
         
         if (res.data?.success) {
           setStatus("success");
           setMsg("Payment verified successfully! Redirecting to your dashboard...");
           
-          // Delay routing slightly to let the user see the success confirmation state
           setTimeout(() => {
             router.push("/profile?view=bookings");
           }, 2500);

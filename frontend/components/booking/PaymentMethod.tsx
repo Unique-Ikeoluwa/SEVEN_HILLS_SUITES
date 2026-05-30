@@ -44,7 +44,7 @@ export function PaymentMethod({ value, onChange }: PaymentMethodProps) {
         <button
           type="button"
           onClick={() => handleMethodChange("crypto")}
-          className={`rounded-xl border p-4 text-left transition-colors ${
+          className={`rounded-xl border p-4 text-left pointer-events-none transition-colors ${
             activeMethod === "crypto"
               ? "border-blue-500 bg-blue-50"
               : "border-gray-200"

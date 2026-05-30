@@ -1,34 +1,21 @@
-"use client";
-
-import { useEffect } from "react";
-import { useAuthStore } from "@/store/authStore";
+import { Metadata } from "next";
 import "./globals.css";
-import Topbar from "@/components/Topbar";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { SocketProvider } from "@/context/SocketContext";
+import RootLayoutClient from "./RootLayoutClient";
+
+export const metadata: Metadata = {
+  title: "Seven Hills Suite",
+  description: "Secure your luxury serviced shortlet apartment reservations with flexible payment gateways.",
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const initializeAuth = useAuthStore((state) => state.initializeAuth);
-  useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
-
   return (
     <html lang="en">
-      <body>
-        <SocketProvider>
-          <Topbar />
-          <Navbar />
-
-          <main>{children}</main>
-
-          <Footer />
-        </SocketProvider>
+      <body className="antialiased">
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );
