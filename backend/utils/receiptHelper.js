@@ -4,9 +4,29 @@
 function renderReceiptHtml({ booking, payment, apartment, user }) {
   const receiptNo = payment?.transaction_reference || `REC-${booking.id.substring(0, 8).toUpperCase()}`;
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const paymentMethod = payment?.payment_method?.toUpperCase() || "CREDIT CARD";
+  let paymentMethodDisplay = "CREDIT CARD";
+  if (payment?.payment_method) {
+    const rawMethod = payment.payment_method.toLowerCase();
+    if (rawMethod === "paystack") {
+      paymentMethodDisplay = "PAYSTACK (FIAT NGN)";
+    } else if (rawMethod === "crypto_usdc" || rawMethod === "crypto") {
+      paymentMethodDisplay = "USDC STABLECOIN (ERC-20)";
+    } else {
+      paymentMethodDisplay = payment.payment_method.toUpperCase();
+    }
+  }
+
   const currency = payment?.currency || "USD";
   const amount = payment?.amount || booking.total_price;
+
+  let formattedAmount = "";
+  if (currency === "NGN") {
+    formattedAmount = `₦${parseFloat(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  } else if (currency === "USDC") {
+    formattedAmount = `${parseFloat(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`;
+  } else {
+    formattedAmount = `$${parseFloat(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+  }
   
   // Calculate night stay duration
   let nights = "N/A";
@@ -58,7 +78,7 @@ function renderReceiptHtml({ booking, payment, apartment, user }) {
             </tr>
             <tr>
               <td style="padding: 6px 0; color: #64748b;">Method of Payment:</td>
-              <td style="padding: 6px 0; color: #0f172a; font-weight: 600; text-transform: uppercase;">${paymentMethod}</td>
+              <td style="padding: 6px 0; color: #0f172a; font-weight: 600; text-transform: uppercase;">${paymentMethodDisplay}</td>
             </tr>
           </table>
         </div>
@@ -99,13 +119,13 @@ function renderReceiptHtml({ booking, payment, apartment, user }) {
                   ${nights} ${nights === 1 ? 'Night' : 'Nights'}
                 </td>
                 <td style="text-align: right; padding: 16px; color: #0f172a; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
-                  ${currency} ${amount}
+                  ${formattedAmount}
                 </td>
               </tr>
               <tr style="background-color: #fffbeb;">
                 <td colspan="2" style="padding: 16px; color: #0f172a; font-weight: 700; border-top: 1px solid #fef3c7;">Total Paid Amount</td>
                 <td style="text-align: right; padding: 16px; color: #b45309; font-weight: 800; font-size: 18px; border-top: 1px solid #fef3c7;">
-                  ${currency} ${amount}
+                  ${formattedAmount}
                 </td>
               </tr>
             </table>
