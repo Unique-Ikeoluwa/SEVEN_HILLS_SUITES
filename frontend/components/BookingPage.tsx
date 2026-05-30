@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 
 export default function BookingPage() {
   const params = useParams()
-  const apartmentIdString = params?.id as string;
+  const apartmentIdString = (params?.id as string) || "";
 
   return (
     <main className="min-h-screen bg-gray-50 py-10">
@@ -25,7 +25,7 @@ export default function BookingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8 items-start">
-            <BookingForm apartmentId={parseInt(apartmentIdString, 10)} />
+            <BookingForm apartmentId={apartmentIdString} />
             <BookingSummary />
         </div>
       </div>

@@ -8,17 +8,10 @@ import { useRouter } from "next/navigation";
 import { HiMenu, HiX } from "react-icons/hi";
 
 export default function Navbar() {
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
-
-  const handleAuthAction = () => {
-    if (isAuthenticated) {
-      logout();
-      router.push("/");
-    }
-  };
-
   const [menuOpen, setMenuOpen] = useState(false);
+
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Apartments", path: "/apartments" },
@@ -26,16 +19,21 @@ export default function Navbar() {
     { name: "Contact", path: "/contact" },
   ];
 
+  const profileRouteTarget = user?.role === "admin" ? "/admin/dashboard" : "/profile";
+  const profileButtonLabel = user?.role === "admin" ? "Admin Panel" : "Profile";
+
   return (
     <>
-      <nav className="bg-white/43 border border-[#C0C0C07D] sticky top-0 z-50">
+      <nav className="bg-white/43 border border-[#C0C0C07D] sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-5 py-2.5 flex items-center justify-between">
+          
           <Link href="/" className="flex md:hidden h-9.5 w-[64.31px] items-center shrink-0">
-              <Image src="/SevenHills.png" alt="SevenHills" width={80} height={50} />
-            </Link>
+            <Image src="/SevenHills.png" alt="SevenHills" width={80} height={50} priority />
+          </Link>
+
           <div className="hidden md:flex gap-20">
             <Link href="/" className="flex h-9.5 w-[64.31px] items-center shrink-0">
-              <Image src="/SevenHills.png" alt="SevenHills" width={80} height={50} />
+              <Image src="/SevenHills.png" alt="SevenHills" width={80} height={50} priority />
             </Link>
             <div className="hidden justify-center md:flex items-center gap-3">
               {navLinks.map((item) => (
@@ -49,49 +47,73 @@ export default function Navbar() {
               ))}
             </div>
           </div>
+
           <div className="hidden md:flex items-center gap-3 h-10 shrink-0">
             <Link href="/apartments" className="px-4 py-2 bg-[#2B3037] text-white text-base font-medium rounded-xl hover:bg-[#050505] transition-colors">
               Explore
             </Link>
+
             {isAuthenticated ? (
-              <button onClick={handleAuthAction} className="px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
-                Logout
-              </button>
+              <Link 
+                href={profileRouteTarget} 
+                className="px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer text-center"
+              >
+                {profileButtonLabel}
+              </Link>
             ) : (
-              <Link href="/login" className="px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
+              <Link 
+                href="/login" 
+                className="px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer text-center"
+              >
                 Login
               </Link>
             )}  
           </div>
+
           <button
-            className="md:hidden text-gray-700 p-2"
+            className="md:hidden text-gray-700 p-2 focus:outline-none"
             onClick={() => setMenuOpen((prev) => !prev)}
           >
             {menuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
           </button>
         </div>
+
         {menuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 px-5 pb-5 flex flex-col gap-3">
+          <div className="md:hidden bg-white border-t border-gray-100 px-5 pb-5 flex flex-col gap-3 shadow-lg animate-fadeIn">
             {navLinks.map((item) => (
               <Link
                 key={item.name}
                 href={item.path}
                 onClick={() => setMenuOpen(false)}
-                className="text-black py-2 text-[15px] font-normal hover:text-[#0057FF] transition-colors"
+                className="text-black py-2 text-[15px] font-normal hover:text-[#0057FF] transition-colors border-b border-gray-50 last:border-none"
               >
                 {item.name}
               </Link>
             ))}
-            <div className="flex gap-3 pt-2">
-              <Link href="/apartments" onClick={() => setMenuOpen(false)} className="flex-1 text-center px-4 py-2 bg-[#2B3037] text-white text-base font-medium rounded-xl hover:bg-[#050505] transition-colors">
+            
+            <div className="flex gap-3 pt-3">
+              <Link 
+                href="/apartments" 
+                onClick={() => setMenuOpen(false)} 
+                className="flex-1 text-center px-4 py-2 bg-[#2B3037] text-white text-base font-medium rounded-xl hover:bg-[#050505] transition-colors"
+              >
                 Explore
               </Link>
+
               {isAuthenticated ? (
-                <button onClick={handleAuthAction} className="flex-1 px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
-                  Logout
-                </button>
+                <Link 
+                  href={profileRouteTarget}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex-1 text-center px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer"
+                >
+                  {profileButtonLabel}
+                </Link>
               ) : (
-                <Link href="/login" className="flex-1 px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer">
+                <Link 
+                  href="/login" 
+                  onClick={() => setMenuOpen(false)}
+                  className="flex-1 text-center px-4 py-2 bg-[#0057FF] text-white text-base font-medium rounded-xl hover:bg-[#0f53db] transition-colors cursor-pointer"
+                >
                   Login
                 </Link>
               )}
