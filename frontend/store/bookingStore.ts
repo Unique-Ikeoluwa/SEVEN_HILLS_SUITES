@@ -25,9 +25,9 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   nights: 1,
   guests: 1,
 
-  basePrice: 85000,
-  cleaningFee: 15000,
-  serviceFee: 5000,
+  basePrice: 0,
+  cleaningFee: 0,
+  serviceFee: 0,
 
   paymentMethod: "naira",
 

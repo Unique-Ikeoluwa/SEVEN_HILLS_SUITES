@@ -21,7 +21,7 @@ export function BookingForm({ apartmentId }: BookingFormProps) {
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
-      fullName: "", email: "", phone: "", idType: "", idNumber: "", specialRequest: "",
+      fullName: "", email: "", phone: "", specialRequest: "",
       guests: 1, paymentMethod: "naira", checkIn: "", checkOut: "",
     },
   });

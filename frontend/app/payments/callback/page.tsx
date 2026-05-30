@@ -28,7 +28,7 @@ export default function PaymentCallbackPage() {
           setMsg("Payment verified successfully! Redirecting to your dashboard...");
           
           setTimeout(() => {
-            router.push("/profile?view=bookings");
+            router.push("/profile");
           }, 2500);
         }
       } catch (err: any) {
