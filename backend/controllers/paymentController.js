@@ -305,13 +305,7 @@ exports.initializeCrypto = async (req, res) => {
     const apartmentCurrency = (apartment && apartment.currency) ? apartment.currency.toUpperCase() : "USD";
 
     let priceInUSD = parseFloat(booking.total_price);
-    if (apartment && apartment.price_in_usd) {
-      const checkInDate = new Date(booking.check_in);
-      const checkOutDate = new Date(booking.check_out);
-      const diffTime = checkOutDate.getTime() - checkInDate.getTime();
-      const days = Math.ceil(diffTime / (1000 * 3600 * 24)) || 1;
-      priceInUSD = parseFloat(apartment.price_in_usd) * days;
-    } else if (apartmentCurrency === "NGN") {
+    if (apartmentCurrency === "NGN") {
       const usdToNgnRate = getExchangeRate();
       priceInUSD = priceInUSD / usdToNgnRate;
     }

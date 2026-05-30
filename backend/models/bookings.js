@@ -22,7 +22,15 @@ module.exports = (sequelize, DataTypes) => {
     check_out: DataTypes.STRING,
     total_price: DataTypes.STRING,
     booking_status: DataTypes.ENUM('pending', 'confirmed', 'cancelled'),
-    payment_status: DataTypes.ENUM('pending', 'paid', 'failed')
+    payment_status: DataTypes.ENUM('pending', 'paid', 'failed'),
+    guest_name: DataTypes.STRING,
+    guest_email: DataTypes.STRING,
+    guest_phone: DataTypes.STRING,
+    payment_type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'fiat'
+    }
   }, {
     sequelize,
     modelName: 'bookings',
