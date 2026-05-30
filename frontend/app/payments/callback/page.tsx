@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/utils/api";
+import { useAuthStore } from "@/store/authStore";
 
-export default function PaymentCallbackPage() {
+function CallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [msg, setMsg] = useState("Verifying payment transaction securely with your bank...");
+  
+  const { user } = useAuthStore(); 
 
   useEffect(() => {
     const reference = searchParams.get("reference");
@@ -28,7 +31,11 @@ export default function PaymentCallbackPage() {
           setMsg("Payment verified successfully! Redirecting to your dashboard...");
           
           setTimeout(() => {
-            router.push("/profile");
+            if (user?.role === "admin") {
+              router.push("/admin/dashboard");
+            } else {
+              router.push("/profile");
+            }
           }, 2500);
         }
       } catch (err: any) {
@@ -38,7 +45,7 @@ export default function PaymentCallbackPage() {
     }
 
     verifyPaymentTransaction();
-  }, [searchParams, router]);
+  }, [searchParams, router, user]);
 
   return (
     <main className="min-h-[calc(100vh-80px)] bg-gray-50 flex items-center justify-center p-5">
@@ -79,5 +86,19 @@ export default function PaymentCallbackPage() {
         )}
       </div>
     </main>
+  );
+}
+export default function PaymentCallbackPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-sm text-gray-400 font-medium">
+          <div className="w-8 h-8 border-4 border-gray-200 border-t-emerald-500 rounded-full animate-spin mb-3" />
+          Acquiring checkout session tokens...
+        </div>
+      }
+    >
+      <CallbackContent />
+    </Suspense>
   );
 }
