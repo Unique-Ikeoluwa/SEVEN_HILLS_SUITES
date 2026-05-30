@@ -10,10 +10,11 @@ router.post("/crypto/verify", authMiddleware, paymentController.verifyCrypto);
 
 // Verification routes
 router.get("/paystack/verify", paymentController.verifyPaystack);
+router.get("/paystack/verify-callback", paymentController.verifyCallback);
 
 // Mock checkout page for developer testing when Paystack API keys aren't configured
 router.get("/paystack/mock-checkout", (req, res) => {
-  const { reference, bookingId } = req.query;
+  const { reference, bookingId, redirect_url } = req.query;
 
   return res.send(`
     <!DOCTYPE html>
@@ -128,10 +129,19 @@ router.get("/paystack/mock-checkout", (req, res) => {
 
       <script>
         function verifyPayment(status) {
+          const redirectUrl = ${redirect_url ? `'${redirect_url}'` : 'null'};
           if (status === 'success') {
-            window.location.href = '/api/payments/paystack/verify?reference=${reference}';
+            if (redirectUrl) {
+              window.location.href = '/api/payments/paystack/verify-callback?reference=${reference}&redirect_url=' + encodeURIComponent(redirectUrl);
+            } else {
+              window.location.href = '/api/payments/paystack/verify-callback?reference=${reference}';
+            }
           } else {
-            alert('Payment simulation cancelled/failed.');
+            if (redirectUrl) {
+              window.location.href = '/api/payments/paystack/verify-callback?reference=${reference}&status=failed&redirect_url=' + encodeURIComponent(redirectUrl);
+            } else {
+              window.location.href = '/api/payments/paystack/verify-callback?reference=${reference}&status=failed';
+            }
           }
         }
       </script>

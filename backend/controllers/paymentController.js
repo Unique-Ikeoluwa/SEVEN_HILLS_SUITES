@@ -65,9 +65,89 @@ async function finalizePaymentSuccess(bookingId, paymentId) {
 }
 
 
+async function initPaystackInternal({ bookingId, userEmail, protocol, host, redirect_url }) {
+  const booking = await bookings.findByPk(bookingId);
+  if (!booking) {
+    throw new Error("Booking not found.");
+  }
+
+  if (booking.booking_status === "confirmed" || booking.payment_status === "paid") {
+    throw new Error("This booking has already been paid for and confirmed.");
+  }
+
+  const apartment = await Apartment.findByPk(booking.apartment_id);
+  const apartmentCurrency = (apartment && apartment.currency) ? apartment.currency.toUpperCase() : "USD";
+
+  let paystackAmount = parseFloat(booking.total_price);
+  if (apartmentCurrency === "USD") {
+    const usdToNgnRate = getExchangeRate();
+    paystackAmount = paystackAmount * usdToNgnRate;
+  }
+
+  const reference = `PAY-${crypto.randomBytes(8).toString("hex")}`;
+  const amountKobo = Math.round(paystackAmount * 100);
+
+  // Save pending payment record in db
+  const pendingPayment = await Payments.create({
+    booking_id: booking.id,
+    amount: paystackAmount.toFixed(2),
+    currency: "NGN",
+    payment_method: "paystack",
+    transaction_reference: reference,
+    payment_status: "pending",
+  });
+
+  const activeCallbackUrl = redirect_url || `${protocol}://${host}/api/payments/paystack/verify-callback`;
+
+  // Check if PAYSTACK_SECRET_KEY is configured
+  if (!process.env.PAYSTACK_SECRET_KEY) {
+    console.log("[PAYSTACK] PAYSTACK_SECRET_KEY not set in .env. Simulating Paystack Checkout.");
+    
+    return {
+      authorization_url: `${protocol}://${host}/api/payments/paystack/mock-checkout?reference=${reference}&bookingId=${bookingId}${redirect_url ? `&redirect_url=${encodeURIComponent(redirect_url)}` : ''}`,
+      reference,
+      access_code: `MOCK_ACCESS_CODE_${reference}`,
+      is_mock: true,
+      payment: pendingPayment,
+    };
+  }
+
+  // Call actual Paystack API
+  const response = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: userEmail,
+      amount: amountKobo,
+      reference,
+      callback_url: activeCallbackUrl,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!data.status) {
+    throw new Error(data.message || "Failed to initialize Paystack payment.");
+  }
+
+  return {
+    authorization_url: data.data.authorization_url,
+    reference: data.data.reference,
+    access_code: data.data.access_code,
+    is_mock: false,
+    payment: pendingPayment,
+  };
+}
+
+exports.initPaystackInternal = initPaystackInternal;
+
 exports.initializePaystack = async (req, res) => {
   try {
     const { bookingId } = req.body;
+    const redirect_url = process.env.PAYSTACK_REDIRECT_URL || "http://localhost:8300/bookings/my-bookings";
 
     if (!bookingId) {
       return res.status(400).json({
@@ -76,95 +156,24 @@ exports.initializePaystack = async (req, res) => {
       });
     }
 
-    const booking = await bookings.findByPk(bookingId);
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found.",
-      });
-    }
-
-    if (booking.booking_status === "confirmed" || booking.payment_status === "paid") {
-      return res.status(400).json({
-        success: false,
-        message: "This booking has already been paid for and confirmed.",
-      });
-    }
-
-    const apartment = await Apartment.findByPk(booking.apartment_id);
-    const apartmentCurrency = (apartment && apartment.currency) ? apartment.currency.toUpperCase() : "USD";
-
-    let paystackAmount = parseFloat(booking.total_price);
-    if (apartmentCurrency === "USD") {
-      const usdToNgnRate = getExchangeRate();
-      paystackAmount = paystackAmount * usdToNgnRate;
-    }
-
-    const reference = `PAY-${crypto.randomBytes(8).toString("hex")}`;
-    const amountKobo = Math.round(paystackAmount * 100);
-
-    // Save pending payment record in db
-    const pendingPayment = await Payments.create({
-      booking_id: booking.id,
-      amount: paystackAmount.toFixed(2),
-      currency: "NGN",
-      payment_method: "paystack",
-      transaction_reference: reference,
-      payment_status: "pending",
-    });
-
     const email = req.user.email;
+    const protocol = req.protocol;
+    const host = req.get("host");
 
-    // Check if PAYSTACK_SECRET_KEY is configured
-    if (!process.env.PAYSTACK_SECRET_KEY) {
-      console.log("[PAYSTACK] PAYSTACK_SECRET_KEY not set in .env. Simulating Paystack Checkout.");
-      
-      // Return simulated success response
-      return res.status(200).json({
-        success: true,
-        message: "Paystack payment initialized (SIMULATED MODE).",
-        data: {
-          authorization_url: `${req.protocol}://${req.get("host")}/api/payments/paystack/mock-checkout?reference=${reference}&bookingId=${bookingId}`,
-          reference,
-          access_code: `MOCK_ACCESS_CODE_${reference}`,
-          is_mock: true,
-        },
-      });
-    }
-
-    // Call actual Paystack API
-    const response = await fetch("https://api.paystack.co/transaction/initialize", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        amount: amountKobo,
-        reference,
-        callback_url: `${req.protocol}://${req.get("host")}/api/payments/paystack/verify-callback`,
-      }),
+    const paymentDetails = await initPaystackInternal({
+      bookingId,
+      userEmail: email,
+      protocol,
+      host,
+      redirect_url,
     });
-
-    const data = await response.json();
-
-    if (!data.status) {
-      return res.status(400).json({
-        success: false,
-        message: "Failed to initialize Paystack payment.",
-        error: data.message,
-      });
-    }
 
     return res.status(200).json({
       success: true,
-      message: "Paystack payment initialized successfully.",
-      data: {
-        authorization_url: data.data.authorization_url,
-        reference: data.data.reference,
-        access_code: data.data.access_code,
-      },
+      message: paymentDetails.is_mock
+        ? "Paystack payment initialized (SIMULATED MODE)."
+        : "Paystack payment initialized successfully.",
+      data: paymentDetails,
     });
   } catch (error) {
     console.error("Initialize Paystack Error:", error);
@@ -255,101 +264,100 @@ exports.verifyPaystack = async (req, res) => {
   }
 };
 
-const CRYPTO_WALLETS = {
-  USDT: process.env.CRYPTO_USDT_ADDR || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", // Ethereum network fallback address
-  USDC: process.env.CRYPTO_USDC_ADDR || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", // Ethereum network fallback address
-};
 
-// Converted prices (Simulated exchange rates relative to USD - both are pegged 1:1)
+
+// Converted prices (Simulated exchange rates relative to USD - pegged 1:1)
 const COIN_RATES = {
-  USDT: 1.0,        // 1 USD = 1 USDT
   USDC: 1.0,        // 1 USD = 1 USDC
 };
 
-// Initialize Crypto Payment
+async function initCryptoInternal({ bookingId }) {
+  const selectedCoin = "USDC";
+
+  const booking = await bookings.findByPk(bookingId);
+  if (!booking) {
+    throw new Error("Booking not found.");
+  }
+
+  if (booking.booking_status === "confirmed" || booking.payment_status === "paid") {
+    throw new Error("This booking has already been paid for and confirmed.");
+  }
+
+  const apartment = await Apartment.findByPk(booking.apartment_id);
+  const apartmentCurrency = (apartment && apartment.currency) ? apartment.currency.toUpperCase() : "USD";
+
+  let priceInUSD = parseFloat(booking.total_price);
+  if (apartment && apartment.price_in_usd) {
+    const checkInDate = new Date(booking.check_in);
+    const checkOutDate = new Date(booking.check_out);
+    const diffTime = checkOutDate.getTime() - checkInDate.getTime();
+    const days = Math.ceil(diffTime / (1000 * 3600 * 24)) || 1;
+    priceInUSD = parseFloat(apartment.price_in_usd) * days;
+  } else if (apartmentCurrency === "NGN") {
+    const usdToNgnRate = getExchangeRate();
+    priceInUSD = priceInUSD / usdToNgnRate;
+  }
+
+  const rate = COIN_RATES[selectedCoin];
+  const cryptoAmount = (priceInUSD * rate).toFixed(2); // USDC stablecoin is 1:1 USD
+
+  const reference = `CRYPTO-${selectedCoin}-${crypto.randomBytes(8).toString("hex")}`;
+
+  // Resolve the active Ethereum wallet address dynamically for ERC-20 USDC payments
+  const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
+  if (!dbWallet || !dbWallet.public_address) {
+    throw new Error("No active admin blockchain wallet is configured in the database. Please generate an admin wallet first.");
+  }
+  const walletAddress = dbWallet.public_address;
+
+  // Create pending payment in database
+  const pendingPayment = await Payments.create({
+    booking_id: booking.id,
+    amount: cryptoAmount,
+    currency: selectedCoin,
+    payment_method: "crypto_usdc",
+    transaction_reference: reference,
+    payment_status: "pending",
+  });
+
+  return {
+    bookingId: booking.id,
+    totalUSD: priceInUSD.toFixed(2),
+    cryptoAmount,
+    currency: selectedCoin,
+    walletAddress,
+    reference,
+    qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(walletAddress)}`,
+    payment: pendingPayment,
+  };
+}
+
+exports.initCryptoInternal = initCryptoInternal;
+
 exports.initializeCrypto = async (req, res) => {
   try {
     const { bookingId, coin } = req.body;
 
-    if (!bookingId || !coin) {
+    if (!bookingId) {
       return res.status(400).json({
         success: false,
-        message: "Booking ID and target Cryptocurrency coin (USDT or USDC) are required.",
+        message: "Booking ID is required.",
       });
     }
 
-    const selectedCoin = coin.toUpperCase();
-    if (!CRYPTO_WALLETS[selectedCoin]) {
+    if (coin && coin.toUpperCase() !== "USDC") {
       return res.status(400).json({
         success: false,
-        message: "Unsupported cryptocurrency. Supported ERC-20 coins on the Ethereum network are: USDT, USDC.",
+        message: "Unsupported cryptocurrency. Crypto payments are restricted to USDC exclusively.",
       });
     }
 
-    const booking = await bookings.findByPk(bookingId);
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found.",
-      });
-    }
-
-    if (booking.booking_status === "confirmed" || booking.payment_status === "paid") {
-      return res.status(400).json({
-        success: false,
-        message: "This booking has already been paid for and confirmed.",
-      });
-    }
-
-    const apartment = await Apartment.findByPk(booking.apartment_id);
-    const apartmentCurrency = (apartment && apartment.currency) ? apartment.currency.toUpperCase() : "USD";
-
-    let priceInUSD = parseFloat(booking.total_price);
-    if (apartmentCurrency === "NGN") {
-      const usdToNgnRate = getExchangeRate();
-      priceInUSD = priceInUSD / usdToNgnRate;
-    }
-
-    const rate = COIN_RATES[selectedCoin];
-    const cryptoAmount = (priceInUSD * rate).toFixed(2); // Stablecoin represents USD value to 2 decimal places
-
-    const reference = `CRYPTO-${selectedCoin}-${crypto.randomBytes(8).toString("hex")}`;
-
-    // Resolve the active Ethereum wallet address dynamically for ERC-20 USDT/USDC payments
-    let walletAddress = CRYPTO_WALLETS[selectedCoin];
-    if (selectedCoin === "USDT" || selectedCoin === "USDC") {
-      try {
-        const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
-        if (dbWallet && dbWallet.public_address) {
-          walletAddress = dbWallet.public_address;
-        }
-      } catch (dbErr) {
-        console.warn("Could not fetch standalone Ethers wallet from database for ERC-20 token transaction, using fallback address:", dbErr.message);
-      }
-    }
-
-    // Create pending payment in database
-    const pendingPayment = await Payments.create({
-      booking_id: booking.id,
-      amount: cryptoAmount,
-      currency: selectedCoin,
-      payment_method: `crypto_${selectedCoin.toLowerCase()}`,
-      transaction_reference: reference,
-      payment_status: "pending",
-    });
+    const paymentDetails = await initCryptoInternal({ bookingId });
 
     return res.status(200).json({
       success: true,
       message: "Crypto payment initialized. Please transfer funds to the address provided below.",
-      data: {
-        bookingId: booking.id,
-        totalUSD: priceInUSD.toFixed(2),
-        cryptoAmount,
-        currency: selectedCoin,
-        walletAddress,
-        reference,
-        qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(walletAddress)}`,
-      },
+      data: paymentDetails,
     });
   } catch (error) {
     console.error("Initialize Crypto Error:", error);
@@ -403,15 +411,14 @@ exports.verifyCrypto = async (req, res) => {
     }
 
     // Resolve active Ethereum wallet address dynamically to double check transaction destination
-    let walletAddress = CRYPTO_WALLETS[payment.currency] || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
-    try {
-      const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
-      if (dbWallet && dbWallet.public_address) {
-        walletAddress = dbWallet.public_address;
-      }
-    } catch (err) {
-      console.warn("Could not retrieve active wallet address for transaction destination check.");
+    const dbWallet = await Wallets.findOne({ order: [["id", "DESC"]] });
+    if (!dbWallet || !dbWallet.public_address) {
+      return res.status(400).json({
+        success: false,
+        message: "Active blockchain admin wallet not found in database. Transaction verification aborted.",
+      });
     }
+    const walletAddress = dbWallet.public_address;
 
     // Dynamic real blockchain check if ETH_RPC_URL is set
     const rpcUrl = process.env.ETH_RPC_URL;
@@ -479,5 +486,59 @@ exports.verifyCrypto = async (req, res) => {
       message: "An error occurred while verifying cryptocurrency payment.",
       error: error.message,
     });
+  }
+};
+
+exports.verifyCallback = async (req, res) => {
+  try {
+    const { reference, trxref, status, redirect_url } = req.query;
+    const finalReference = reference || trxref;
+
+    if (!finalReference) {
+      return res.status(400).send("Transaction reference is missing.");
+    }
+
+    const payment = await Payments.findOne({ where: { transaction_reference: finalReference } });
+    if (!payment) {
+      return res.status(404).send("Payment transaction record not found.");
+    }
+
+    let isSuccess = false;
+
+    if (status === "failed") {
+      payment.payment_status = "failed";
+      await payment.save();
+    } else if (payment.payment_status === "paid") {
+      isSuccess = true;
+    } else {
+      // Verify payment
+      if (!process.env.PAYSTACK_SECRET_KEY) {
+        await finalizePaymentSuccess(payment.booking_id, payment.id);
+        isSuccess = true;
+      } else {
+        const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(finalReference)}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          },
+        });
+        const data = await response.json();
+        if (data.status && data.data.status === "success") {
+          await finalizePaymentSuccess(payment.booking_id, payment.id);
+          isSuccess = true;
+        } else {
+          payment.payment_status = "failed";
+          await payment.save();
+        }
+      }
+    }
+
+    const activeRedirect = redirect_url || process.env.PAYSTACK_REDIRECT_URL || "http://localhost:8300/bookings/my-bookings";
+    const separator = activeRedirect.includes("?") ? "&" : "?";
+    const finalRedirect = `${activeRedirect}${separator}reference=${finalReference}&status=${isSuccess ? "success" : "failed"}&booking_id=${payment.booking_id}`;
+    return res.redirect(finalRedirect);
+  } catch (error) {
+    console.error("Paystack Redirect Callback Error:", error);
+    return res.status(500).send("An error occurred while handling the redirect callback.");
   }
 };

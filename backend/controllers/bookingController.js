@@ -11,12 +11,25 @@ exports.createBooking = async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await Users.findByPk(userId);
-    const { apartment_id, check_in, check_out } = req.body;
+    let { apartment_id, check_in, check_out, guest_name, guest_email, guest_phone, payment_type } = req.body;
+    const redirect_url = process.env.PAYSTACK_REDIRECT_URL || "http://localhost:8300/bookings/my-bookings";
 
     if (!apartment_id || !check_in || !check_out) {
       return res.status(400).json({
         success: false,
         message: "Apartment ID, check-in date, and check-out date are required.",
+      });
+    }
+
+    if (!payment_type) {
+      payment_type = "fiat";
+    }
+
+    const typeLower = payment_type.toLowerCase();
+    if (typeLower !== "fiat" && typeLower !== "crypto") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment_type. Allowed options are: 'fiat' or 'crypto'.",
       });
     }
 
@@ -75,6 +88,11 @@ exports.createBooking = async (req, res) => {
 
     const totalPrice = (dailyPrice * days).toFixed(2);
 
+    // Guest Info Fallback
+    const activeGuestName = guest_name || (user ? user.fullName : "Valued Guest");
+    const activeGuestEmail = guest_email || (user ? user.email : "");
+    const activeGuestPhone = guest_phone || (user ? user.phone_no : "");
+
     // 4. Create the booking as 'pending'
     const booking = await bookings.create({
       user_id: userId,
@@ -84,31 +102,67 @@ exports.createBooking = async (req, res) => {
       total_price: totalPrice.toString(),
       booking_status: "pending",
       payment_status: "pending",
+      guest_name: activeGuestName,
+      guest_email: activeGuestEmail,
+      guest_phone: activeGuestPhone,
+      payment_type: typeLower,
     });
+
+    // Auto-initialize payment based on payment_type
+    let paymentData = null;
+    let autoPaymentMessage = "";
+    const { initPaystackInternal, initCryptoInternal } = require("./paymentController");
+
+    if (typeLower === "fiat") {
+      try {
+        paymentData = await initPaystackInternal({
+          bookingId: booking.id,
+          userEmail: activeGuestEmail || user.email,
+          protocol: req.protocol,
+          host: req.get("host"),
+          redirect_url,
+        });
+        autoPaymentMessage = "Paystack checkout session successfully generated.";
+      } catch (paystackErr) {
+        console.error("Auto Paystack Init Failed:", paystackErr.message);
+        autoPaymentMessage = `Paystack auto-init failed: ${paystackErr.message}. You can retry payment initialization manually.`;
+      }
+    } else if (typeLower === "crypto") {
+      try {
+        paymentData = await initCryptoInternal({
+          bookingId: booking.id,
+        });
+        autoPaymentMessage = "USDC crypto billing address successfully generated.";
+      } catch (cryptoErr) {
+        console.error("Auto USDC Crypto Init Failed:", cryptoErr.message);
+        autoPaymentMessage = `USDC auto-init failed: ${cryptoErr.message}. You can retry payment initialization manually.`;
+      }
+    }
 
     // Send Booking Creation Notifications
     const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
     await sendNotification({
       userId: userId,
-      message: `Your booking for "${apartment.title}" has been initialized successfully. Total amount: $${totalPrice}. Please proceed to complete your payment. Guest: ${user ? user.fullName : 'Valued Guest'} (Phone: ${user ? user.phone_no : 'N/A'}).`,
+      message: `Your booking for "${apartment.title}" has been initialized successfully. Total amount: $${totalPrice}. Please proceed to complete your payment. Guest: ${activeGuestName} (Phone: ${activeGuestPhone}).`,
       emailSubject: "Booking Initialized 🔑",
-      emailBodyText: `<h3>Booking Initialized Successfully</h3><p>We are pleased to inform you that your reservation for <b>${apartment.title}</b> is currently pending.</p><p><b>Guest Name:</b> ${user ? user.fullName : 'Valued Guest'}<br/><b>Guest Phone:</b> ${user ? user.phone_no : 'N/A'}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Price:</b> $${totalPrice}</p><p>Please initialize the checkout process to secure your stay.</p>`
+      emailBodyText: `<h3>Booking Initialized Successfully</h3><p>We are pleased to inform you that your reservation for <b>${apartment.title}</b> is currently pending.</p><p><b>Guest Name:</b> ${activeGuestName}<br/><b>Guest Phone:</b> ${activeGuestPhone}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Price:</b> $${totalPrice}</p><p>Please initialize the checkout process to secure your stay.</p>`
     });
 
     await notifyAdmins({
-      message: `New booking initialized for "${apartment.title}" by guest: ${user ? user.fullName : 'Valued Guest'} (Phone: ${user ? user.phone_no : 'N/A'}). Total: $${totalPrice}.`,
+      message: `New booking initialized for "${apartment.title}" by guest: ${activeGuestName} (Phone: ${activeGuestPhone}). Total: $${totalPrice}.`,
       emailSubject: "New Pending Booking Alert 🔔",
-      emailBodyText: `<p>A new booking has been initialized on the system.</p><p><b>Guest Name:</b> ${user ? user.fullName : 'Valued Guest'}<br/><b>Guest Phone:</b> ${user ? user.phone_no : 'N/A'}<br/><b>Apartment:</b> ${apartment.title}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Amount:</b> $${totalPrice}</p>`
+      emailBodyText: `<p>A new booking has been initialized on the system.</p><p><b>Guest Name:</b> ${activeGuestName}<br/><b>Guest Phone:</b> ${activeGuestPhone}<br/><b>Apartment:</b> ${apartment.title}<br/><b>Check-in:</b> ${check_in}<br/><b>Check-out:</b> ${check_out}<br/><b>Total Amount:</b> $${totalPrice}</p>`
     });
 
     return res.status(201).json({
       success: true,
-      message: "Booking initialized successfully! Please proceed to payment.",
+      message: "Booking initialized successfully! " + autoPaymentMessage,
       data: {
         booking: {
           ...booking.toJSON(),
-          guest_name: user ? user.fullName : "N/A",
-          guest_phone: user ? user.phone_no : "N/A",
+          guest_name: activeGuestName,
+          guest_email: activeGuestEmail,
+          guest_phone: activeGuestPhone,
         },
         apartment: {
           title: apartment.title,
@@ -116,6 +170,7 @@ exports.createBooking = async (req, res) => {
           pricePerDay: apartment.price,
         },
         days,
+        payment: paymentData,
       },
     });
   } catch (error) {
