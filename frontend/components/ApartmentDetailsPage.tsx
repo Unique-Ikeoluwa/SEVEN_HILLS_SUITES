@@ -84,7 +84,7 @@ export default function ApartmentDetailsPage({ apartment }: ApartmentDetailsPage
             <div className="text-left sm:text-right">
               <span className="block text-xs text-gray-400 font-medium leading-none mb-1">Total package:</span>
               <span className="block text-xl font-bold text-gray-900">
-                ₦ {numericPrice.toLocaleString()}.00
+                {apartment.currency === "USD" ? "$" : "₦"} {numericPrice.toLocaleString()}.00
               </span>
             </div> 
             <button  

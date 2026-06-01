@@ -79,8 +79,10 @@ export function ApartmentCardList({ apt, saved, onToggleSave }: ApartmentCardLis
         <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-between shrink-0 sm:min-w-30 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
           <ScoreBadge rating={mockRating} reviews={mockReviewCount} />
           <div className="text-right">
-            <p className="text-base sm:text-lg font-bold text-gray-900">₦ {basePrice.toLocaleString()}.00</p>
-            <p className="text-[10px] sm:text-xs text-gray-400">per night, 2 adults</p>
+            <p className="font-bold text-gray-900 text-sm sm:text-base">
+              {apt.currency === "USD" ? "$" : "₦"} {basePrice.toLocaleString()}
+            </p>
+            <p className="text-[10px] text-gray-400">per night</p>
           </div>
         </div>
       </div>

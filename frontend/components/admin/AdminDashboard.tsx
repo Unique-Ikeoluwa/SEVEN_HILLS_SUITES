@@ -6,11 +6,12 @@ import { SystemSettingsForm } from "./SystemSettingsForm";
 import { AnalyticsPanel } from "./AnalyticsPanel";
 import { BookingsTrackerPanel } from "./BookingsTrackerPanel";
 import { UsersManagementPanel } from "./UsersManagementPanel";
+import { ManageApartment } from "./ManageApartments";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { FiLogOut } from "react-icons/fi";
 
-type TabOption = "analytics" | "bookings" | "upload" | "users" | "exchange";
+type TabOption = "analytics" | "bookings" | "upload" | "users" | "exchange" | "inventory";
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<TabOption>("analytics");
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
         { id: "upload", label: "Upload Apartment" },
         { id: "users", label: "User Directory" },
         { id: "exchange", label: "Exchange Control" },
+        { id: "inventory", label: "Manage Apartments" },
     ];
 
     const handleAdminLogout = async () => {
@@ -91,6 +93,7 @@ export default function AdminDashboard() {
                 {activeTab === "upload" && <CreateApartmentForm />}
                 {activeTab === "users" && <UsersManagementPanel />}
                 {activeTab === "exchange" && <SystemSettingsForm />}
+                {activeTab === "inventory" && <ManageApartment />}
             </div>
         </div>
       </main>

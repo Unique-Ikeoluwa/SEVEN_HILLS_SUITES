@@ -77,7 +77,9 @@ export function ApartmentCardGrid({ apt, saved, onToggleSave }: ApartmentCardGri
             </span>
           </div>
           <div className="text-right">
-            <p className="font-bold text-gray-900 text-sm sm:text-base">₦ {basePrice.toLocaleString()}</p>
+            <p className="font-bold text-gray-900 text-sm sm:text-base">
+              {apt.currency === "USD" ? "$" : "₦"} {basePrice.toLocaleString()}
+            </p>
             <p className="text-[10px] text-gray-400">per night</p>
           </div>
         </div>
