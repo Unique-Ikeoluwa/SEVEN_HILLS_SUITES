@@ -25,15 +25,8 @@ export function ManageApartment() {
   const [apartments, setApartments] = useState<APIApartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingApt, setEditingApt] = useState<APIApartment | null>(null);
-  const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
-
-const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (e.target.files) {
-    const filesArray = Array.from(e.target.files).slice(0, 6);
-    setEditImageFiles(filesArray);
-  }
-};
+  const [statusMsg, setStatusMsg] = useState<{ success: boolean; text: string } | null>(null);
 
   const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<EditValues>({
     resolver: zodResolver(editSchema),
@@ -53,6 +46,8 @@ const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   useEffect(() => { fetchInventory(); }, []);
 
   const startEdit = (apt: APIApartment) => {
+    setStatusMsg(null);
+    setEditImageFiles([]);
     setEditingApt(apt);
     reset({
       title: apt.title,
@@ -75,6 +70,13 @@ const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
 
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+        const filesArray = Array.from(e.target.files).slice(0, 6);
+        setEditImageFiles(filesArray);
+        }
+    };
+
   const onEditSubmit = async (data: EditValues) => {
     if (!editingApt) return;
     setStatusMsg(null);
@@ -92,24 +94,26 @@ const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       editImageFiles.forEach((file) => formData.append("images", file));
     }
 
-      await api.put(`/apartments/${editingApt.id}`, formData, {
+      const res = await api.put(`/apartments/${editingApt.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setEditingApt(null);
-      setEditingApt(null)
+      setStatusMsg({ success: true, text: res.data?.message || "Apartment updated successfully!" });
+      setEditImageFiles([]);
       fetchInventory();
-      alert("Apartment modified successfully!");
+      setTimeout(() => {
+        setEditingApt(null);
+        setStatusMsg(null);
+      }, 2500);
     } catch (err: any) {
-      setStatusMsg(err.response?.data?.message || "Failed to save profile specifications.");
+      setStatusMsg({
+        success: false,
+        text: err.response?.data?.message || "Failed to save profile specifications."
+        });
     }
   };
 
   if (loading) return <div className="text-center py-10 text-sm text-gray-400">Syncing active assets...</div>;
-    const closeEditModal = () => {
-    setEditingApt(null);
-    setEditImageFiles([]);
-    };
 
   return (
     <div className="space-y-6">
@@ -154,8 +158,13 @@ const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               <button onClick={() => setEditingApt(null)} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
             </div>
 
-            {statusMsg && <div className="p-3 text-xs bg-red-50 text-red-600 rounded-xl text-center font-bold">{statusMsg}</div>}
-
+            {statusMsg && (
+              <div className={`p-4 text-sm font-medium rounded-xl text-center border ${
+                statusMsg.success ? "bg-green-50 border-green-200 text-green-600" : "bg-red-50 border-red-200 text-red-600"
+              }`}>
+                {statusMsg.text}
+              </div>
+            )}
             <form onSubmit={handleSubmit(onEditSubmit)} className="space-y-4 text-left">
                 <div className="space-y-1.5">
                     <Label>Apartment Title</Label>
