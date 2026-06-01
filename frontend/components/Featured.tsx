@@ -9,7 +9,7 @@ export default function Featured() {
     <section className="bg-[#F1F2F3] py-24">
       <div className="max-w-7xl mx-auto px-8">
         <motion.h2
-          className="text-3xl md:text-[40px] font-semibold text-[#121316] tracking-tight mb-8"
+          className="text-3xl md:text-[40px] font-roboto font-semibold text-[#121316] tracking-tight mb-8"
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -33,10 +33,10 @@ export default function Featured() {
               <Image src="/bigroom.jpg" alt={featuredRoom.label} width={856} height={98} className="h-64 md:h-161.5 w-full object-cover transition-transform duration-500 group-hover:scale-105" />
             </div>
             <div className="px-4 py-6 gap-2 text-center">
-              <p className="text-[16px] font-medium tracking-widest text-[#424242] uppercase">
+              <p className="text-[16px] font-medium tracking-widest text-[#424242] font-poppins uppercase">
                 {featuredRoom.label}
               </p>
-              <p className="text-[#757575] text-sm mt-1">{featuredRoom.price}</p>
+              <p className="text-[#757575] font-poppins text-sm mt-1">{featuredRoom.price}/ per night</p>
             </div>
           </motion.div>
           <div className="flex flex-col gap-4 md:gap-11.75">

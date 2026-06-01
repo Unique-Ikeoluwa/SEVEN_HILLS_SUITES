@@ -26,10 +26,13 @@ export default function Hero() {
   };
   return (
     <>
-      <section className="bg-gray-50 pt-10 md:pt-16 pb-16 md:pb-28">
+      <section className="bg-gray-50 pt-10 md:pt-16 pb-16 md:pb-28" style={{
+        backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.04) 2px, transparent 2px)",
+        backgroundSize: "28px 28px",
+      }}>
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           <motion.div className="flex flex-col gap-6" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}>
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-semibold text-gray-900 leading-[1.1] tracking-tight font-serif">
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-semibold text-gray-900 leading-[1.1] tracking-tight">
               Where Every Stay<br />Feels Like Home.
             </h1>
             <p className="text-[#475467] text-lg md:text-xl font-normal leading-relaxed max-w-md">

@@ -16,7 +16,6 @@ export default function Navbar() {
     { name: "Home", path: "/" },
     { name: "Apartments", path: "/apartments" },
     { name: "About Us", path: "/about-us" },
-    { name: "Contact", path: "/contact" },
   ];
 
   const profileRouteTarget = user?.role === "admin" ? "/admin/dashboard" : "/profile";
@@ -24,7 +23,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white/43 border border-[#C0C0C07D] sticky top-0 z-50 backdrop-blur-md">
+      <nav className="bg-white/43 font-poppins border border-[#C0C0C07D] sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-5 py-2.5 flex items-center justify-between">
           
           <Link href="/" className="flex md:hidden h-9.5 w-[64.31px] items-center shrink-0">

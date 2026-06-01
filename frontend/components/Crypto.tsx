@@ -6,7 +6,7 @@ import { LiaHashtagSolid } from "react-icons/lia";
 
 export default function Crypto() {
     return (
-        <section className="bg-white py-24 overflow-hidden">
+        <section className="font-dm-sans bg-white py-24 overflow-hidden">
             <div className="max-w-5xl mx-auto px-6">
                 <motion.div className="text-center text-black mb-16" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: "easeOut" }}>
                     <p className="text-base font-medium mb-3">

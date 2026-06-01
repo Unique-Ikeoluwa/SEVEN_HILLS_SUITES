@@ -9,7 +9,7 @@ export default function Gallery() {
         <div className="md:hidden flex flex-col gap-4 px-4">
           <motion.h2
           className="text-3xl font-normal text-black text-center mb-2"
-          style={{ fontFamily: "Georgia, serif" }}
+          style={{ fontFamily: "nunito" }}
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
@@ -62,7 +62,7 @@ export default function Gallery() {
             transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
             >
             <h2 className="text-4xl md:text-[62px] font-normal text-black text-center"
-              style={{ fontFamily: "Georgia, serif" }}>
+              style={{ fontFamily: "nunito" }}>
               Thoughtfully furnished spaces where comfort meets contemporary living.
             </h2>
           </motion.div>
