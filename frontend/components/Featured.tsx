@@ -36,7 +36,7 @@ export default function Featured() {
               <p className="text-[16px] font-medium tracking-widest text-[#424242] font-poppins uppercase">
                 {featuredRoom.label}
               </p>
-              <p className="text-[#757575] font-poppins text-sm mt-1">{featuredRoom.price}/ per night</p>
+              <p className="text-[#757575] font-poppins text-sm mt-1">{featuredRoom.price}</p>
             </div>
           </motion.div>
           <div className="flex flex-col gap-4 md:gap-11.75">
